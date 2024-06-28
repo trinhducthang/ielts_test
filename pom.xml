@@ -50,7 +50,16 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.28</version> <!-- Replace with the version you are using -->
+		</dependency>
+
 	</dependencies>
+
+
 
 	<build>
 		<plugins>
