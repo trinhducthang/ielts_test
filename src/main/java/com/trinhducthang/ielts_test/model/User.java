@@ -1,8 +1,10 @@
 package com.trinhducthang.ielts_test.model;
 
 import com.trinhducthang.ielts_test.enums.Gender;
+import com.trinhducthang.ielts_test.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,6 +18,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,9 +32,11 @@ public class User {
 
     private String fullName;
 
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
 
     private Gender gender;
+
+    private Role role;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

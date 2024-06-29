@@ -1,9 +1,11 @@
 package com.trinhducthang.ielts_test.dto;
 
 import com.trinhducthang.ielts_test.enums.Gender;
+import com.trinhducthang.ielts_test.enums.Role;
 import lombok.Data;
 
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Data
@@ -18,8 +20,10 @@ public class UserDTO {
 
     private String fullName;
 
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
 
     private Gender gender;
+
+    private Role role;
 
 }
