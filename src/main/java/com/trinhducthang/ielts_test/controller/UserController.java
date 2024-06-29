@@ -24,7 +24,7 @@ public class UserController {
         return userService.updateUser(userDTO,id);
     }
 
-    @GetMapping()
+    @GetMapping("users")
     public List<User> getAll() {
         return userService.getUsers();
     }

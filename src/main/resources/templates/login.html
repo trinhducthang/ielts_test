@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#loginForm').submit(function(event) {
+                event.preventDefault();
+                var username = $('#username').val();
+                var password = $('#password').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/auth/token',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ username: username, password: password }),
+                    success: function(response) {
+                        // Xử lý phản hồi thành công
+                        console.log(response);
+                        // Chuyển hướng hoặc xử lý dữ liệu khi đăng nhập thành công
+                        window.location.href = '/dashboard'; // Ví dụ chuyển hướng đến trang dashboard
+                    },
+                    error: function(xhr, status, error) {
+                        // Xử lý lỗi
+                        console.error(xhr.responseText);
+                        var errorMessage = JSON.parse(xhr.responseText).message;
+                        $('#errorAlert').text(errorMessage).removeClass('d-none');
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Login
+                </div>
+                <div class="card-body">
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                    <div id="errorAlert" class="alert alert-danger mt-3 d-none" role="alert">
+                        <!-- Thông báo lỗi sẽ hiển thị ở đây -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

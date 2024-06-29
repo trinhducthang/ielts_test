@@ -21,8 +21,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.stereotype.Component;
-
 
 import javax.crypto.spec.SecretKeySpec;
 
@@ -32,7 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig{
 
     private final String[] PUBLIC_ENDPOINTS = {
-            "/insert"
+            "/insert","/auth/token","/auth/introspect","/login"
     };
 
     @Value("${jwt.signerKey}")
@@ -42,7 +40,8 @@ public class SecurityConfig{
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(request ->
                 request.requestMatchers(HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET,"user")
+                        .requestMatchers(HttpMethod.GET,PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET,"users")
                         .hasAuthority("ROLE_ADMIN")
                         .anyRequest()
                         .authenticated());
