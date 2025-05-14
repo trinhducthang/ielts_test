@@ -45,23 +45,10 @@
 </head>
 <body>
 <div class="container">
-    <form id="urlForm">
-        <input type="text" id="urlInput" placeholder="Nhập URL tại đây..." required>
-        <button type="submit">Gửi</button>
-    </form>
 </div>
 
 <script>
-    document.getElementById('urlForm').addEventListener('submit', function(e) {
-        e.preventDefault(); // Ngăn không gửi form theo cách truyền thống
-        const url = document.getElementById('urlInput').value.trim();
-        if (url) {
-            localStorage.setItem('savedUrl', url); // Lưu vào localStorage
-            window.location.href = '/student/homework'; // Chuyển sang trang khác
-        } else {
-            alert('Vui lòng nhập URL!');
-        }
-    });
+    window.location.href = "/login";
 </script>
 </body>
 </html>

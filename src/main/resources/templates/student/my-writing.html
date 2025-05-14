@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài viết của tôi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .assignment-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .assignment-content {
+            font-size: 16px;
+            margin-top: 10px;
+            color: #555;
+        }
+        .assignment-time, .assignment-due, .assignment-status {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+        }
+        .status-submitted {
+            color: #28a745;  /* Màu xanh lá cho trạng thái đã nộp */
+        }
+        .status-not-submitted {
+            color: #dc3545;  /* Màu đỏ cho trạng thái chưa nộp */
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Bài viết của tôi</h1>
+    <ul id="assignmentList"></ul>
+</div>
+
+<script>
+    const jwtToken = localStorage.getItem('jwtToken');
+
+    async function loadAssignments() {
+        const response = await fetch('/api/assignments/mine', {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const list = document.getElementById('assignmentList');
+
+            for (const a of data) {
+                const li = document.createElement('li');
+
+                // Chuyển thời gian từ ISO string sang định dạng dễ đọc
+                const createdAt = new Date(a.timeCreated).toLocaleString();
+                const dueDate = a.dueDate ? new Date(a.dueDate).toLocaleDateString() : "Không có";
+
+                // Gọi API kiểm tra xem đã nộp bài chưa
+                let isSubmitted = false;
+                try {
+                    const submissionRes = await fetch(`/api/assignments/${a.id}/submission`, {
+                        headers: { 'Authorization': `Bearer ${jwtToken}` }
+                    });
+
+                    if (submissionRes.ok) {
+                        isSubmitted = true;  // Đã nộp
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi kiểm tra trạng thái nộp bài:", e);
+                }
+
+                // Xác định trạng thái và HTML tương ứng
+                const statusText = isSubmitted ? 'Đã nộp' : 'Chưa nộp';
+                const statusClass = isSubmitted ? 'status-submitted' : 'status-not-submitted';
+
+                li.innerHTML = `
+                <b><div class="assignment-content">${a.description}</div></b>
+                <div class="assignment-time">Thời gian giao bài: ${createdAt}</div>
+                <div class="assignment-due">Hạn nộp: ${dueDate}</div>
+                <div class="assignment-status ${statusClass}">Trạng thái: ${statusText}</div>
+
+                ${isSubmitted ?
+                    `<button onclick="viewSubmittedAssignment('${a.id}')">Xem bài đã nộp</button>` :
+                    `<button onclick="submitAssignment('${a.id}')">Nộp bài</button>`
+                }
+            `;
+
+                list.appendChild(li);
+            }
+        } else {
+            console.error('Lỗi khi tải bài viết');
+        }
+    }
+
+
+    // Hàm xử lý sự kiện khi người dùng nhấn nút "Nộp bài"
+    function submitAssignment(assignmentId) {
+        // Chuyển hướng đến trang nộp bài với assignmentId
+        window.location.href = `/student/submit-writing?assignmentId=${assignmentId}`;
+    }
+
+    // Hàm xử lý sự kiện khi người dùng nhấn nút "Xem bài đã nộp"
+    function viewSubmittedAssignment(assignmentId) {
+        // Chuyển hướng đến trang chi tiết xem bài đã nộp
+        window.location.href = `/student/writing-submitted?assignmentId=${assignmentId}`;
+    }
+
+    window.onload = loadAssignments;
+</script>
+
+</body>
+</html>

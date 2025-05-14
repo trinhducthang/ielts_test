@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giao Diện với Thanh Menu Bên Cạnh</title>
+    <style>
+        /* Đặt style chung cho body */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(to right, #4facfe, #00f2fe); /* Tạo gradient background */
+        }
+
+        /* Thanh menu bên cạnh */
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            height: 100%;
+            position: fixed;
+            box-shadow: 3px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px 0 0 10px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 5px;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #575757;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Nút Log-out */
+        .sidebar ul li#logout {
+            margin-top: auto; /* Đẩy xuống cuối cùng */
+        }
+
+        .sidebar ul li#logout a {
+            background-color: #f44336; /* Màu đỏ cho nút đăng xuất */
+            color: white;
+            text-align: center;
+        }
+
+        /* Nội dung chính */
+        .main-content {
+            margin-left: 260px; /* Để tránh bị che bởi thanh menu */
+            padding: 30px;
+            width: 100%;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .main-content h1 {
+            font-size: 32px;
+            color: #333;
+        }
+
+        #contentDisplay {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hiệu ứng transition cho sidebar khi hover */
+        .sidebar:hover {
+            width: 280px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Thanh menu bên cạnh -->
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <ul>
+            <li><a href="/student/reading-test" id="readingLink">Bài Reading</a></li>
+            <li><a href="#" id="listeningLink">Bài Listening</a></li>
+            <li><a href="#" id="writingLink">Bài Writing</a></li>
+            <li><a href="#" id="speakingLink">Bài Speaking</a></li>
+            <!-- Nút Log-out -->
+            <li id="logout"><a href="#" id="logOutBtn">Đăng xuất</a></li>
+        </ul>
+    </div>
+
+    <!-- Nội dung chính -->
+    <div class="main-content">
+        <h1>Chào mừng bạn đến với trang học của chúng tôi! </h1>
+        <div id="userInfo">
+            <p id="greeting"></p>
+        </div>
+        <div id="contentDisplay">
+            <p>Chọn một bài học từ menu bên cạnh để xem nội dung.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lấy thông tin người dùng từ localStorage
+    const username = localStorage.getItem('username');
+    const jwtToken = localStorage.getItem('jwtToken');
+
+    if (username && jwtToken) {
+        // Gọi API để lấy thông tin người dùng (ID và tên người dùng)
+        fetch(`/api/users/get-by-username?username=${username}`)
+            .then(response => response.json()) // Chuyển phản hồi thành JSON
+            .then(data => {
+                console.log('Dữ liệu trả về từ API:', data); // Kiểm tra dữ liệu trả về từ API
+
+                if (data && data.fullName) { // Kiểm tra xem dữ liệu có hợp lệ và có thuộc tính `fullName`
+                    // Hiển thị lời chào với tên người dùng
+                    document.getElementById('greeting').textContent = `Chào, ${data.fullName}!`;
+                    localStorage.setItem('userId', data.id); // Lưu ID người dùng vào localStorage
+                    console.log('User ID:', data.id); // Hiển thị ID người dùng trong console
+                } else {
+                    console.error('Dữ liệu không hợp lệ từ API');
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi khi lấy tên người dùng:', error);
+            });
+    }
+
+    // Hàm đăng xuất
+    document.getElementById('logOutBtn').addEventListener('click', function(event) {
+        event.preventDefault();
+
+        // Xóa thông tin người dùng khỏi localStorage
+        localStorage.removeItem('username');
+        localStorage.removeItem('jwtToken');
+        localStorage.removeItem('userId');
+
+        // Chuyển hướng về trang đăng nhập hoặc trang chủ
+        window.location.href = '/login'; // Thay đổi URL này theo đúng trang đăng nhập của bạn
+    });
+
+    // Các sự kiện khác vẫn giữ nguyên
+    document.getElementById('readingLink').addEventListener('click', function(event) {
+        event.preventDefault();
+        window.location.href = "/student/reading-test";
+    });
+
+    document.getElementById('listeningLink').addEventListener('click', function() {
+        changeContent('listening');
+    });
+
+    document.getElementById('writingLink').addEventListener('click', function(event) {
+        event.preventDefault();
+        window.location.href = "/student/my-writing";
+    });
+
+    document.getElementById('speakingLink').addEventListener('click', function() {
+        changeContent('speaking');
+    });
+
+    // Định nghĩa các bài học và nội dung của chúng
+    const content = {
+        reading: "<h2>Bài Reading</h2><p>Đây là nội dung bài đọc. Bạn có thể thay đổi nội dung này để phù hợp với bài học của mình.</p>",
+        listening: "<h2>Bài Listening</h2><p>Đây là nội dung bài nghe. Bạn có thể thay đổi nội dung này để phù hợp với bài học của mình.</p>",
+        writing: "<h2>Bài Writing</h2><p>Đây là nội dung bài viết. Bạn có thể thay đổi nội dung này để phù hợp với bài học của mình.</p>",
+        speaking: "<h2>Bài Speaking</h2><p>Đây là nội dung bài nói. Bạn có thể thay đổi nội dung này để phù hợp với bài học của mình.</p>"
+    };
+
+    // Hàm thay đổi nội dung khi click vào các link
+    function changeContent(type) {
+        document.getElementById('contentDisplay').innerHTML = content[type];
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Giao Bài Tập</title>
+</head>
+<body>
+<h1>Giao Bài Tập</h1>
+<div id="user-list"></div>
+<button onclick="assignTest()">Giao bài</button>
+
+<script>
+    // const testId = localStorage.getItem('testId'); // Lấy testId đã lưu
+    const testId =1;
+    // Lấy danh sách học sinh
+    fetch('/api/users/all')
+        .then(response => response.json())
+        .then(data => {
+            const users = data.result;
+            const listDiv = document.getElementById('user-list');
+
+            users.forEach(user => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = user.id;
+                checkbox.id = 'user-' + user.id;
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = user.name || `User ${user.id}`;
+
+                const div = document.createElement('div');
+                div.appendChild(checkbox);
+                div.appendChild(label);
+
+                listDiv.appendChild(div);
+            });
+        });
+
+    // Gửi danh sách student-test để giao bài
+    function assignTest() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+        const assignments = Array.from(checkboxes).map(cb => ({
+            testId: testId,
+            studentId: cb.value
+        }));
+
+        // Gửi từng assignment hoặc tạo API nhận danh sách
+        assignments.forEach(assignment => {
+            fetch('/api/student-tests', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(assignment)
+            }).then(res => {
+                if (res.ok) {
+                    console.log('Đã giao bài cho học sinh ID:', assignment.studentId);
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

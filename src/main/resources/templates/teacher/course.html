@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Quản lý Lớp học</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .actions {
+            margin-top: 10px;
+        }
+
+        .actions button {
+            margin-right: 5px;
+            background-color: #28a745;
+        }
+
+        .actions .delete {
+            background-color: #dc3545;
+        }
+
+        .checkbox-container {
+            max-height: 200px;  /* Chiều cao tối đa */
+            overflow-y: auto;   /* Hiển thị thanh cuộn dọc */
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            background: #fefefe;
+            margin-top: 10px;
+        }
+
+
+        .checkbox-container label {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .checkbox-container input {
+            margin: 5px;
+        }
+
+        .checkbox-container div {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Quản lý Lớp học</h1>
+
+    <form id="course-form">
+        <input type="hidden" id="course-id" />
+        <input type="text" id="course-name" placeholder="Tên lớp học" required />
+
+        <!-- Phần chọn học sinh -->
+        <!-- Phần chọn học sinh -->
+        <div>
+            <label><strong>Chọn học viên:</strong></label>
+            <div class="checkbox-container" id="user-checkboxes"></div>
+        </div>
+
+
+        <button type="submit">Lưu</button>
+    </form>
+
+    <ul id="course-list"></ul>
+</div>
+
+<script>
+    const apiUrl = 'http://localhost:8080/courses';
+    const userApiUrl = 'http://localhost:8080/api/users/all';
+    const token = localStorage.getItem('jwtToken'); // 👈 Lưu token sau khi login
+
+    const form = document.getElementById('course-form');
+    const courseIdInput = document.getElementById('course-id');
+    const courseNameInput = document.getElementById('course-name');
+    const courseList = document.getElementById('course-list');
+    const userCheckboxes = document.getElementById('user-checkboxes');
+
+    let allUsers = [];
+
+    async function fetchUsers() {
+        const res = await fetch(userApiUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await res.json();
+        allUsers = data.result;
+        renderUserCheckboxes();
+    }
+
+    function renderUserCheckboxes(selectedIds = []) {
+        userCheckboxes.innerHTML = ''; // Xóa các checkbox cũ
+        allUsers.forEach(user => {
+            // Tạo div chứa checkbox và label
+            const div = document.createElement('div');
+
+            // Tạo checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = user.id;
+            checkbox.id = `user-${user.id}`;
+            // Nếu học viên đã được chọn, đánh dấu checkbox là checked
+            if (selectedIds.includes(user.id)) {
+                checkbox.checked = true;
+            }
+
+            // Tạo label cho mỗi học viên, với tên học viên sẽ hiển thị trong label
+            const label = document.createElement('label');
+            label.htmlFor = `user-${user.id}`;
+            label.textContent = user.fullName; // Hiển thị tên học viên tại đây
+
+            // Thêm checkbox và label vào div
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            userCheckboxes.appendChild(div);
+        });
+    }
+
+    async function fetchCourses() {
+        const res = await fetch(apiUrl);
+        const courses = await res.json();
+        renderCourses(courses);
+    }
+
+    function renderCourses(courses) {
+        courseList.innerHTML = '';
+        courses.forEach(course => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+        <strong>${course.name}</strong>
+        <div class="actions">
+          <button onclick="editCourse(${course.id}, '${course.name}')">Sửa</button>
+          <button class="delete" onclick="deleteCourse(${course.id})">Xóa</button>
+        </div>
+      `;
+            courseList.appendChild(li);
+        });
+    }
+
+    window.editCourse = async (id, name) => {
+        courseIdInput.value = id;
+        courseNameInput.value = name;
+
+        const res = await fetch(`${apiUrl}/${id}/users`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const usersInCourse = await res.json();
+        const selectedUserIds = usersInCourse.map(user => user.id);
+        renderUserCheckboxes(selectedUserIds);
+    };
+
+    window.deleteCourse = async (id) => {
+        await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+        fetchCourses();
+    };
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = courseIdInput.value;
+        const name = courseNameInput.value;
+        const selectedUserIds = Array.from(userCheckboxes.querySelectorAll('input:checked')).map(checkbox => parseInt(checkbox.value));
+
+        if (id) {
+            await fetch(`${apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            });
+        } else {
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            });
+            const course = await res.json();
+            id = course.id;
+        }
+
+        // Cập nhật danh sách học viên của lớp
+        await fetch(`${apiUrl}/${id}/users`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(selectedUserIds)
+        });
+
+        form.reset();
+        fetchCourses();
+    };
+
+    // Khởi chạy
+    (async () => {
+        await fetchUsers();
+        await fetchCourses();
+    })();
+</script>
+</body>
+</html>

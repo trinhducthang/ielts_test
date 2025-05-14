@@ -107,17 +107,21 @@
 <script>
     // Globals
     const studentAnswers = {};
-    let correctAnswers   = {};
+    let correctAnswers = {};
+    const params = new URLSearchParams(window.location.search);
+    const idReadingTest = params.get('idTest');
+
+    console.log(idReadingTest);
 
     document.addEventListener('DOMContentLoaded', async () => {
-        const savedUrl = localStorage.getItem('savedUrl');
+        const savedUrl = `http://localhost:8080/api/reading/content/${idReadingTest}`;
         if (!savedUrl) {
             alert("Không tìm thấy URL đã lưu. Vui lòng quay lại trang nhập URL.");
             return;
         }
 
         // 1) Load passage + questions
-        await loadExam(`http://localhost:8080/api/questions/full?url=${encodeURIComponent(savedUrl)}`);
+        await loadExam(`/api/reading/content/${idReadingTest}`);
 
         // 2) Start timer (ví dụ 20 phút)
         startTimer(20 * 60);
@@ -135,9 +139,9 @@
     /** Load HTML từ API, parse passage và các exam-section có câu hỏi */
     async function loadExam(url) {
         try {
-            const res  = await fetch(url);
+            const res = await fetch(url);
             const html = await res.text();
-            const tmp  = document.createElement('div');
+            const tmp = document.createElement('div');
             tmp.innerHTML = html;
 
             // --- Passage ---
@@ -147,14 +151,14 @@
 
             // --- Questions ---
             const rpanel = document.getElementById('right-panel');
-            rpanel.innerHTML = '';  // reset trước
+            rpanel.innerHTML = ''; // reset trước
 
             // Lấy tất cả exam-section, chỉ append những section có câu hỏi
             tmp.querySelectorAll('div.exam-section').forEach(sec => {
                 // điều kiện section chứa select[id^="q"], input[id^="q"], hoặc radio[name^="q"]
                 const hasSelect = sec.querySelector('select[id^="q"]');
                 const hasTextIn = sec.querySelector('input[type="text"][id^="q"]');
-                const hasRadio  = sec.querySelector('input[type="radio"][name^="q"]');
+                const hasRadio = sec.querySelector('input[type="radio"][name^="q"]');
                 if (hasSelect || hasTextIn || hasRadio) {
                     rpanel.innerHTML += sec.innerHTML;
                 }
@@ -164,7 +168,7 @@
             initPalette();
         } catch (err) {
             console.error('Load error', err);
-            document.getElementById('left-panel').textContent  = 'Failed to load passage';
+            document.getElementById('left-panel').textContent = 'Failed to load passage';
             document.getElementById('right-panel').textContent = 'Failed to load questions';
         }
     }
@@ -187,8 +191,8 @@
                 return m ? parseInt(m[1], 10) : NaN;
             })
             .filter(n => !isNaN(n))
-            .filter((v,i,a) => a.indexOf(v) === i)  // dedupe
-            .sort((a,b) => a - b);
+            .filter((v, i, a) => a.indexOf(v) === i)  // dedupe
+            .sort((a, b) => a - b);
 
         // Dựng palette với đúng số câu
         qNumbers.forEach(num => {
@@ -211,12 +215,12 @@
             if (el.tagName === 'SELECT') {
                 el.onchange = () => {
                     studentAnswers[idx] = el.value;
-                    document.getElementById('navq'+idx).classList.add('answered');
+                    document.getElementById('navq' + idx).classList.add('answered');
                 };
             } else if (el.type === 'text') {
                 el.oninput = () => {
                     studentAnswers[idx] = el.value.trim();
-                    document.getElementById('navq'+idx).classList.add('answered');
+                    document.getElementById('navq' + idx).classList.add('answered');
                 };
             } else if (el.type === 'radio') {
                 // radio: nhiều nút chia chung name=q<num>
@@ -224,7 +228,7 @@
                     r.onchange = () => {
                         const checked = right.querySelector(`input[name="q${idx}"]:checked`);
                         studentAnswers[idx] = checked ? checked.value : '';
-                        document.getElementById('navq'+idx).classList.add('answered');
+                        document.getElementById('navq' + idx).classList.add('answered');
                     };
                 });
             }
@@ -234,7 +238,7 @@
     /** Fetch solution link từ server */
     async function fetchSolutionLink(savedUrl) {
         try {
-            const resp = await fetch(`/api/questions/link?url=${encodeURIComponent(savedUrl)}`);
+            const resp = await fetch(`/api/reading/get-solution-link?url=${encodeURIComponent(savedUrl)}`);
             if (!resp.ok) throw new Error();
             return await resp.text();
         } catch {
@@ -246,7 +250,7 @@
     /** Fetch đáp án đúng từ server */
     async function getCorrectAnswers(solutionLink) {
         try {
-            const resp = await fetch(`/api/questions/answers?url=${encodeURIComponent(solutionLink)}`);
+            const resp = await fetch(`/api/reading/get-answers?url=${encodeURIComponent(solutionLink)}`);
             if (!resp.ok) throw new Error();
             correctAnswers = await resp.json();
             console.log('Correct Answers:', correctAnswers);
@@ -260,23 +264,80 @@
         let t = duration;
         const disp = document.getElementById('timer');
         const iv = setInterval(() => {
-            const m = Math.floor(t/60), s = t%60;
-            disp.textContent = `${m}`.padStart(2,'0')+':'+`${s}`.padStart(2,'0');
+            const m = Math.floor(t / 60), s = t % 60;
+            disp.textContent = `${m}`.padStart(2, '0') + ':' + `${s}`.padStart(2, '0');
             if (t-- <= 0) clearInterval(iv);
         }, 1000);
     }
 
     /** Tính điểm khi submit */
-    function submitExam() {
+    async function submitExam() {
         const total = Object.keys(correctAnswers).length;
         let correct = 0;
+
+        // Thu thập câu trả lời của sinh viên
         for (const q in correctAnswers) {
             const user = (studentAnswers[q] || '').toLowerCase().trim();
-            const ans  = (correctAnswers[q] || '').toLowerCase().trim();
+            const ans = (correctAnswers[q] || '').toLowerCase().trim();
             if (user === ans) correct++;
         }
-        alert(`Bạn trả lời đúng ${correct}/${total} câu (${Math.round(correct/total*100)}%)`);
+
+        // Tính điểm phần trăm
+        const percentage = Math.round(correct / total * 100);
+
+        // Lấy thời gian làm bài
+        const timeTaken = document.getElementById('timer').textContent;
+        const userId = localStorage.getItem('userId');
+
+        if (!userId) {
+            alert('Không tìm thấy thông tin người dùng.');
+            return;
+        }
+
+        console.log('User ID:', userId);
+
+        // Convert studentAnswers to the desired format (example of array of objects)
+        const formattedAnswers = Object.entries(studentAnswers).map(([questionId, answer]) => ({
+            questionId: parseInt(questionId),  // Ensure questionId is a number
+            answer: answer
+        }));
+
+        // Gửi câu trả lời và điểm tới API
+        try {
+            const response = await saveStudentAnswers({
+                studentId: parseInt(userId),
+                answers: formattedAnswers,  // Send the formatted answers
+                points: correct,
+                totalTime: timeTaken,
+                timeToSubmit: new Date().toISOString()  // Thời gian hiện tại
+            });
+
+            if (response.ok) {
+                alert(`Bạn trả lời đúng ${correct}/${total} câu (${percentage}%)`);
+                window.location.href = '/student/home'; // Chuyển hướng sau khi hoàn thành
+            } else {
+                const errorMessage = response.message || 'Lưu bài thi không thành công.';
+                alert(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error occurred while saving the exam:', error);
+            alert('Đã có lỗi xảy ra khi lưu bài thi. Vui lòng thử lại.');
+        }
     }
+
+
+    // Hàm gửi câu trả lời tới server
+    async function saveStudentAnswers(data) {
+        const response = await fetch('/api/student-answer/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        return response;
+    }
+
 </script>
 
 </body>

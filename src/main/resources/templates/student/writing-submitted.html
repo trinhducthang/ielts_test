@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bài viết & Nhận xét</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            margin: 20px;
+            gap: 30px;
+        }
+
+        .left, .right {
+            flex: 1;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .highlight {
+            background-color: #ffffcc;
+            font-weight: bold;
+        }
+
+        .comment-box {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f0f8ff;
+            border-left: 4px solid #2ecc71;
+            border-radius: 5px;
+        }
+
+        .comment-box:hover {
+            background: #e8f8f5;
+        }
+
+        .comment-box[data-target]:hover {
+            cursor: pointer;
+        }
+
+        mark {
+            background: #fcf8e3;
+            padding: 0 2px;
+        }
+
+        h3 {
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .comment-number {
+            font-weight: bold;
+            color: #3498db;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="left">
+    <h3>Bài viết đã nộp</h3>
+    <div id="contentArea"></div>
+</div>
+
+<div class="right">
+    <h3>Nhận xét chi tiết</h3>
+    <div id="commentsArea"></div>
+
+    <h3>Nhận xét chung</h3>
+    <div id="generalCommentsArea"></div>
+</div>
+
+<script>
+    const jwtToken = localStorage.getItem('jwtToken');
+    const assignmentId = new URLSearchParams(window.location.search).get('assignmentId');
+
+    async function loadAssignment() {
+        const res = await fetch(`/api/assignments/${assignmentId}/submission`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            document.getElementById('contentArea').innerHTML = '<p>Không thể tải nội dung bài viết.</p>';
+            return;
+        }
+
+        const data = await res.json();
+        let content = data.content || '';
+        const inlineComments = data.feedback?.inlineComments || [];
+        const generalComments = data.feedback?.comment || '';  // Thêm nhận xét chung
+
+        const commentMap = new Map();
+
+        // Highlight từng đoạn trong content và đánh số nhận xét
+        inlineComments.forEach((c, index) => {
+            const key = `comment-${index}`;
+            const text = c.text.trim();
+            if (text && content.includes(text)) {
+                const safeText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex
+                const regex = new RegExp(safeText);
+                content = content.replace(regex, `<mark id="${key}" class="highlight">${text}</mark>`);
+                commentMap.set(key, c.comment);
+            }
+        });
+
+        document.getElementById('contentArea').innerHTML = `<p>${content.replace(/\n/g, '<br>')}</p>`;
+
+        // Render comments
+        const commentsArea = document.getElementById('commentsArea');
+        commentMap.forEach((comment, key, index) => {
+            const div = document.createElement('div');
+            div.className = 'comment-box';
+            div.setAttribute('data-target', key);
+            div.innerHTML = `<span class="comment-number"></span><strong>Nhận xét:</strong> ${comment}`;
+            div.addEventListener('click', () => {
+                const target = document.getElementById(key);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.style.transition = 'background-color 1s';
+                    target.style.backgroundColor = '#ffeb3b';
+                    setTimeout(() => target.style.backgroundColor = '', 1500);
+                }
+            });
+            commentsArea.appendChild(div);
+        });
+
+        // Hiển thị nhận xét chung
+        const generalCommentsArea = document.getElementById('generalCommentsArea');
+        if (generalComments) {
+            generalCommentsArea.innerHTML = `<p>${generalComments}</p>`;
+        } else {
+            generalCommentsArea.innerHTML = '<p>Không có nhận xét chung.</p>';
+        }
+    }
+
+    loadAssignment();
+</script>
+
+</body>
+</html>

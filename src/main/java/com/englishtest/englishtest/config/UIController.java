@@ -16,23 +16,64 @@ public class UIController {
         return "logout";
     }
 
-    @GetMapping("/")
+    @GetMapping("/teacher/assigment")
     public String index() {
-        return "index";
+        return "teacher/assignment";
     }
 
-    @GetMapping("/student/homework")
+    @GetMapping("/student/answer/reading")
     public String studentDashboard() {
-        return "student/mcq";
+        return "/student/answer";
     }
 
-    @GetMapping("/teacher/create-user")
-    public String createUser() {
-        return "teacher/create-user";
-    }
 
-    @GetMapping("/teacher/get-user")
+    @GetMapping("/teacher/user-management")
     public String getUser() {
-        return "teacher/get-user";
+        return "teacher/user-management";
+    }
+
+    @GetMapping("/teacher/reading-test")
+    public String readingTest() {
+        return "teacher/reading-test";
+    }
+
+    @GetMapping("/teacher/course-management")
+    public String courseManagement() {
+        return "teacher/course";
+    }
+
+    @GetMapping("/student/reading-test")
+    public String readingTest2() {
+        return "student/reading-test";
+    }
+
+    @GetMapping("/student/home")
+    public String home() {
+        return "student/home";
+    }
+
+    @GetMapping("/student/my-writing")
+    public String myWriting() {
+        return "student/my-writing";
+    }
+
+    @GetMapping("/student/submit-writing")
+    public String submitWriting() {
+        return "student/submit-writing";
+    }
+
+    @GetMapping("/teacher/create-writing")
+    public String createWriting() {
+        return "teacher/create-writing";
+    }
+
+    @GetMapping("/teacher/give-feedback")
+    public String giveFeedback() {
+        return "teacher/give-feedback";
+    }
+
+    @GetMapping("/student/writing-submitted")
+    public String writing() {
+        return "student/writing-submitted";
     }
 }

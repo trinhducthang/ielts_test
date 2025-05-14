@@ -19,7 +19,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
-        h2 {
+        h2, h3 {
             text-align: center;
             color: #333;
         }
@@ -47,6 +47,11 @@
 
         .error {
             color: red;
+            text-align: center;
+        }
+
+        .success {
+            color: green;
             text-align: center;
         }
 
@@ -95,13 +100,48 @@
         .update-btn:hover {
             background-color: #d68910;
         }
+
+        #registrationForm {
+            margin-top: 30px;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+
+        #registrationForm button {
+            padding: 10px;
+            width: 48%;
+            margin-right: 2%;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        #showFormBtn {
+            float: right;
+            margin-bottom: 10px;
+        }
+
+        .form-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Admin Dashboard - User Management</h2>
+    <h2>User Management</h2>
     <div id="message" class="error"></div>
+
+    <button id="showFormBtn" class="update-btn">➕ Create account</button>
 
     <table id="userTable" style="display: none;">
         <thead>
@@ -121,11 +161,31 @@
         <span id="pageInfo"></span>
         <button id="nextBtn" disabled>Next</button>
     </div>
+
+    <!-- Registration Form -->
+    <div id="registrationForm" style="display: none;">
+        <h3>Create account</h3>
+        <form id="createUserForm">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password">
+            <input type="text" id="fullName" placeholder="Full name">
+            <select id="role" required>
+                <option value="">-- Select role --</option>
+                <option value="TEACHER">Teacher</option>
+                <option value="STUDENT">Student</option>
+            </select>
+            <div class="form-buttons">
+                <button type="submit" style="background-color:#007bff;">Create</button>
+                <button type="button" id="cancelBtn" style="background-color:gray;">Cancle</button>
+            </div>
+            <div id="formMessage"></div>
+        </form>
+    </div>
 </div>
 
 <script>
-    const token = localStorage.getItem("jwtToken"); // Replace with actual logic
-    const isAdmin = true; // Replace with actual role check
+    const token = localStorage.getItem("jwtToken");
+    const isAdmin = true;
 
     const messageEl = document.getElementById("message");
     const table = document.getElementById("userTable");
@@ -133,6 +193,11 @@
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
     const pageInfo = document.getElementById("pageInfo");
+
+    const showFormBtn = document.getElementById("showFormBtn");
+    const registrationForm = document.getElementById("registrationForm");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const formMsg = document.getElementById("formMessage");
 
     let currentPage = 0;
     const pageSize = 5;
@@ -163,21 +228,21 @@
                     <td>${user.role}</td>
                     <td>
                         <button class="action delete-btn" onclick="deleteUser(${user.id})">🗑 Delete</button>
-                        <button class="action update-btn" onclick="updatePassword('${user.username}')">✏ Update</button>
+                        <button class="action update-btn" onclick="updatePassword('${user.username}')">✏ Update pass</button>
                     </td>
                 `;
                     tbody.appendChild(row);
                 });
 
                 table.style.display = "table";
-                pageInfo.textContent = `Page ${data.number + 1} of ${data.totalPages}`;
+                pageInfo.textContent = `Trang ${data.number + 1} / ${data.totalPages}`;
                 prevBtn.disabled = data.first;
                 nextBtn.disabled = data.last;
                 currentPage = data.number;
             })
             .catch(err => {
                 console.error(err);
-                messageEl.textContent = "Failed to fetch user data.";
+                messageEl.textContent = "Lỗi khi tải dữ liệu người dùng.";
             });
     }
 
@@ -190,7 +255,7 @@
     });
 
     function deleteUser(id) {
-        if (!confirm("Are you sure you want to delete this user?")) return;
+        if (!confirm("Bạn có chắc chắn muốn xóa người dùng này?")) return;
 
         fetch(`/api/users/info?id=${id}`, {
             method: "DELETE",
@@ -205,12 +270,12 @@
             })
             .catch(err => {
                 console.error(err);
-                alert("Failed to delete user.");
+                alert("Xóa thất bại.");
             });
     }
 
     function updatePassword(username) {
-        const newPassword = prompt(`Enter new password for ${username}:`);
+        const newPassword = prompt(`Nhập mật khẩu mới cho ${username}:`);
         if (!newPassword) return;
 
         fetch(`/api/users/updatePassword/${username}?password=${encodeURIComponent(newPassword)}`, {
@@ -225,9 +290,66 @@
             })
             .catch(err => {
                 console.error(err);
-                alert("Failed to update password.");
+                alert("Cập nhật mật khẩu thất bại.");
             });
     }
+
+    // Form show/hide
+    showFormBtn.addEventListener("click", () => {
+        registrationForm.style.display = "block";
+        showFormBtn.style.display = "none";
+    });
+
+    cancelBtn.addEventListener("click", () => {
+        registrationForm.style.display = "none";
+        showFormBtn.style.display = "inline-block";
+        formMsg.textContent = "";
+        document.getElementById("createUserForm").reset();
+    });
+
+    // Form submit
+    document.getElementById('createUserForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const fullName = document.getElementById('fullName').value;
+        const role = document.getElementById('role').value;
+
+        const data = { username, password, fullName, role };
+
+        try {
+            const response = await fetch('/api/users/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.code === 200) {
+                formMsg.className = 'success';
+                formMsg.textContent = result.message;
+                loadPage(currentPage);
+                setTimeout(() => {
+                    registrationForm.style.display = "none";
+                    showFormBtn.style.display = "inline-block";
+                    document.getElementById('createUserForm').reset();
+                    formMsg.textContent = "";
+                }, 2000);
+            } else {
+                formMsg.className = 'error';
+                formMsg.textContent = result.message || 'Tạo tài khoản thất bại.';
+            }
+        } catch (err) {
+            console.error(err);
+            formMsg.className = 'error';
+            formMsg.textContent = 'Lỗi kết nối hoặc máy chủ.';
+        }
+    });
 </script>
 
 </body>

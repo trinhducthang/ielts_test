@@ -1,4 +1,12 @@
 jwt:
   signerKey: "T8n9uQUag43p2EysKjWcCZwvU32GcvIDAyRmZQSIjFRlJy7KjnsFGOmfUA15cK1c"
 
+spring:
+  data:
+    mongodb:
+      uri: mongodb://admin:admin123@localhost:27017/writing_db?authSource=admin
+
+
+
+
 

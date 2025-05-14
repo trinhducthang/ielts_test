@@ -16,10 +16,7 @@ public class Question {
     private QuestionType questionType;
     @ElementCollection
     private List<String> choices = new ArrayList<>();
-    private String correctAnswer;
 
-    @ManyToOne
-    private Passage passage;
 
     public enum QuestionType { MULTIPLE_CHOICE, TRUE_FALSE_NOT_GIVEN, MATCHING }
 

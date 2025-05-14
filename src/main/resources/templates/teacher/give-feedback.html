@@ -1,0 +1,634 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="vi">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Gửi nhận xét bài viết</title>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: Arial, sans-serif;-->
+<!--            background: #f4f4f4;-->
+<!--            padding: 30px;-->
+<!--        }-->
+<!--        form {-->
+<!--            background: #fff;-->
+<!--            padding: 20px;-->
+<!--            max-width: 600px;-->
+<!--            border-radius: 10px;-->
+<!--            box-shadow: 0 2px 4px rgba(0,0,0,0.1);-->
+<!--        }-->
+<!--        label {-->
+<!--            display: block;-->
+<!--            margin-top: 15px;-->
+<!--            font-weight: bold;-->
+<!--        }-->
+<!--        select, textarea, button {-->
+<!--            width: 100%;-->
+<!--            margin-top: 5px;-->
+<!--            padding: 10px;-->
+<!--            border-radius: 5px;-->
+<!--            border: 1px solid #ccc;-->
+<!--        }-->
+<!--        button {-->
+<!--            background: #3498db;-->
+<!--            color: white;-->
+<!--            border: none;-->
+<!--            margin-top: 20px;-->
+<!--            cursor: pointer;-->
+<!--        }-->
+<!--        button:hover {-->
+<!--            background: #2980b9;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<h2>Gửi nhận xét bài viết của học sinh</h2>-->
+<!--<form id="feedbackForm">-->
+<!--    <label for="studentSelect">Chọn học sinh:</label>-->
+<!--    <select id="studentSelect" required>-->
+<!--        <option value="">&#45;&#45; Chọn học sinh &#45;&#45;</option>-->
+<!--    </select>-->
+
+<!--    <label for="assignmentSelect">Chọn bài viết:</label>-->
+<!--    <select id="assignmentSelect" required disabled>-->
+<!--        <option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>-->
+<!--    </select>-->
+
+<!--    <label for="feedbackText">Nhận xét:</label>-->
+<!--    <textarea id="feedbackText" rows="5" required></textarea>-->
+
+<!--    <button type="submit">Gửi nhận xét</button>-->
+<!--</form>-->
+
+<!--<script>-->
+<!--    const jwtToken = localStorage.getItem('jwtToken');-->
+<!--    const studentSelect = document.getElementById('studentSelect');-->
+<!--    const assignmentSelect = document.getElementById('assignmentSelect');-->
+
+<!--    const userMap = new Map(); // lưu username => userId-->
+
+<!--    async function loadStudents() {-->
+<!--        const res = await fetch('/api/users/all', {-->
+<!--            headers: {-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            }-->
+<!--        });-->
+
+<!--        if (!res.ok) {-->
+<!--            alert('Không thể tải danh sách học sinh (lỗi xác thực?)');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const data = await res.json();-->
+<!--        data.result.forEach(user => {-->
+<!--            userMap.set(user.username, user.id);-->
+<!--            const option = document.createElement('option');-->
+<!--            option.value = user.username;-->
+<!--            option.textContent = user.username;-->
+<!--            studentSelect.appendChild(option);-->
+<!--        });-->
+<!--    }-->
+
+
+<!--    studentSelect.addEventListener('change', async function () {-->
+<!--        const username = this.value;-->
+<!--        const userId = userMap.get(username);-->
+
+<!--        if (!username) {-->
+<!--            assignmentSelect.innerHTML = `<option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>`;-->
+<!--            assignmentSelect.disabled = true;-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const res = await fetch(`/api/assignments/of?username=${username}`, {-->
+<!--            headers: {-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            }-->
+<!--        });-->
+
+<!--        if (!res.ok) {-->
+<!--            alert('Lỗi khi tải bài viết (có thể do token hết hạn hoặc sai quyền).');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const assignments = await res.json();-->
+
+<!--        assignmentSelect.innerHTML = `<option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>`;-->
+<!--        assignments.forEach(a => {-->
+<!--            const option = document.createElement('option');-->
+<!--            option.value = a.id;-->
+<!--            option.textContent = a.description || `Bài viết #${a.id}`;-->
+<!--            assignmentSelect.appendChild(option);-->
+<!--        });-->
+<!--        assignmentSelect.disabled = false;-->
+<!--    });-->
+
+
+<!--    document.getElementById('feedbackForm').addEventListener('submit', async function (e) {-->
+<!--        e.preventDefault();-->
+
+<!--        const username = studentSelect.value;-->
+<!--        const userId = userMap.get(username);-->
+<!--        const assignmentId = assignmentSelect.value;-->
+<!--        const feedbackText = document.getElementById('feedbackText').value;-->
+
+<!--        if (!assignmentId || !userId) {-->
+<!--            alert("Vui lòng chọn đầy đủ thông tin.");-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const feedback = {-->
+<!--            comment: feedbackText,-->
+<!--            createdAt: new Date().toISOString()-->
+<!--        };-->
+
+<!--        const response = await fetch(`/api/assignments/${assignmentId}/feedback/${userId}`, {-->
+<!--            method: 'POST',-->
+<!--            headers: {-->
+<!--                'Content-Type': 'application/json',-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            },-->
+<!--            body: JSON.stringify(feedback)-->
+<!--        });-->
+
+<!--        if (response.ok) {-->
+<!--            alert('Đã gửi nhận xét!');-->
+<!--            document.getElementById('feedbackForm').reset();-->
+<!--            assignmentSelect.innerHTML = `<option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>`;-->
+<!--            assignmentSelect.disabled = true;-->
+<!--        } else {-->
+<!--            alert('Lỗi khi gửi nhận xét.');-->
+<!--        }-->
+<!--    });-->
+
+<!--    loadStudents();-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="vi">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Gửi nhận xét bài viết</title>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: Arial, sans-serif;-->
+<!--            background: #f4f4f4;-->
+<!--            padding: 30px;-->
+<!--        }-->
+
+<!--        form {-->
+<!--            background: #fff;-->
+<!--            padding: 20px;-->
+<!--            max-width: 700px;-->
+<!--            border-radius: 10px;-->
+<!--            box-shadow: 0 2px 4px rgba(0,0,0,0.1);-->
+<!--        }-->
+
+<!--        label {-->
+<!--            display: block;-->
+<!--            margin-top: 15px;-->
+<!--            font-weight: bold;-->
+<!--        }-->
+
+<!--        select, textarea, button {-->
+<!--            width: 100%;-->
+<!--            margin-top: 5px;-->
+<!--            padding: 10px;-->
+<!--            border-radius: 5px;-->
+<!--            border: 1px solid #ccc;-->
+<!--        }-->
+
+<!--        button {-->
+<!--            background: #3498db;-->
+<!--            color: white;-->
+<!--            border: none;-->
+<!--            margin-top: 20px;-->
+<!--            cursor: pointer;-->
+<!--        }-->
+
+<!--        button:hover {-->
+<!--            background: #2980b9;-->
+<!--        }-->
+
+<!--        .assignment-content {-->
+<!--            background: #fefefe;-->
+<!--            padding: 15px;-->
+<!--            border: 1px solid #ddd;-->
+<!--            border-radius: 8px;-->
+<!--            margin-top: 20px;-->
+<!--            display: none;-->
+<!--        }-->
+
+<!--        .assignment-content h3 {-->
+<!--            margin-top: 0;-->
+<!--        }-->
+
+<!--        .assignment-content img {-->
+<!--            max-width: 100%;-->
+<!--            margin-top: 10px;-->
+<!--            display: none;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<h2>Gửi nhận xét bài viết của học sinh</h2>-->
+<!--<form id="feedbackForm">-->
+<!--    <label for="studentSelect">Chọn học sinh:</label>-->
+<!--    <select id="studentSelect" required>-->
+<!--        <option value="">&#45;&#45; Chọn học sinh &#45;&#45;</option>-->
+<!--    </select>-->
+
+<!--    <label for="assignmentSelect">Chọn bài viết:</label>-->
+<!--    <select id="assignmentSelect" required disabled>-->
+<!--        <option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>-->
+<!--    </select>-->
+
+<!--    <div class="assignment-content" id="assignmentContent">-->
+<!--        <h3>Nội dung học sinh đã nộp:</h3>-->
+<!--        <p id="submissionText" style="white-space: pre-line;"></p>-->
+<!--    </div>-->
+
+<!--    <label for="feedbackText">Nhận xét:</label>-->
+<!--    <textarea id="feedbackText" rows="5" required></textarea>-->
+
+<!--    <button type="submit">Gửi nhận xét</button>-->
+<!--</form>-->
+
+<!--<script>-->
+<!--    const jwtToken = localStorage.getItem('jwtToken');-->
+<!--    const studentSelect = document.getElementById('studentSelect');-->
+<!--    const assignmentSelect = document.getElementById('assignmentSelect');-->
+<!--    const assignmentContentDiv = document.getElementById('assignmentContent');-->
+<!--    const submissionText = document.getElementById('submissionText');-->
+
+<!--    const userMap = new Map();-->
+<!--    const assignmentMap = new Map();-->
+
+<!--    async function loadStudents() {-->
+<!--        const res = await fetch('/api/users/all', {-->
+<!--            headers: {-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            }-->
+<!--        });-->
+
+<!--        if (!res.ok) {-->
+<!--            alert('Không thể tải danh sách học sinh.');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const data = await res.json();-->
+<!--        data.result.forEach(user => {-->
+<!--            userMap.set(user.username, user.id);-->
+<!--            const option = document.createElement('option');-->
+<!--            option.value = user.username;-->
+<!--            option.textContent = user.username;-->
+<!--            studentSelect.appendChild(option);-->
+<!--        });-->
+<!--    }-->
+
+<!--    studentSelect.addEventListener('change', async function () {-->
+<!--        const username = this.value;-->
+<!--        const userId = userMap.get(username);-->
+
+<!--        assignmentSelect.innerHTML = `<option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>`;-->
+<!--        assignmentSelect.disabled = true;-->
+<!--        assignmentContentDiv.style.display = 'none';-->
+
+<!--        if (!username) return;-->
+
+<!--        const res = await fetch(`/api/assignments/of?username=${username}`, {-->
+<!--            headers: {-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            }-->
+<!--        });-->
+
+<!--        if (!res.ok) {-->
+<!--            alert('Lỗi khi tải danh sách bài viết.');-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const assignments = await res.json();-->
+<!--        assignmentMap.clear();-->
+
+<!--        assignments.forEach(a => {-->
+<!--            assignmentMap.set(a.id, a);-->
+<!--            const option = document.createElement('option');-->
+<!--            option.value = a.id;-->
+<!--            option.textContent = a.description || `Bài viết #${a.id}`;-->
+<!--            assignmentSelect.appendChild(option);-->
+<!--        });-->
+
+<!--        assignmentSelect.disabled = false;-->
+<!--    });-->
+
+<!--    assignmentSelect.addEventListener('change', async function () {-->
+<!--        const assignmentId = this.value;-->
+<!--        const username = studentSelect.value;-->
+<!--        const userId = userMap.get(username);-->
+<!--        assignmentContentDiv.style.display = 'none';-->
+
+<!--        if (!assignmentId || !userId) return;-->
+
+<!--        const res = await fetch(`/api/assignments/${assignmentId}/submission/${userId}`, {-->
+<!--            headers: {-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            }-->
+<!--        });-->
+
+<!--        if (!res.ok) {-->
+<!--            submissionText.textContent = 'Học sinh chưa nộp bài viết này.';-->
+<!--        } else {-->
+<!--            const submission = await res.json();-->
+<!--            submissionText.textContent = submission.content || '(Không có nội dung)';-->
+<!--        }-->
+
+<!--        assignmentContentDiv.style.display = 'block';-->
+<!--    });-->
+
+<!--    document.getElementById('feedbackForm').addEventListener('submit', async function (e) {-->
+<!--        e.preventDefault();-->
+
+<!--        const username = studentSelect.value;-->
+<!--        const userId = userMap.get(username);-->
+<!--        const assignmentId = assignmentSelect.value;-->
+<!--        const feedbackText = document.getElementById('feedbackText').value;-->
+
+<!--        if (!assignmentId || !userId) {-->
+<!--            alert("Vui lòng chọn đầy đủ thông tin.");-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const feedback = {-->
+<!--            comment: feedbackText,-->
+<!--            createdAt: new Date().toISOString()-->
+<!--        };-->
+
+<!--        const response = await fetch(`/api/assignments/${assignmentId}/feedback/${userId}`, {-->
+<!--            method: 'POST',-->
+<!--            headers: {-->
+<!--                'Content-Type': 'application/json',-->
+<!--                'Authorization': `Bearer ${jwtToken}`-->
+<!--            },-->
+<!--            body: JSON.stringify(feedback)-->
+<!--        });-->
+
+<!--        if (response.ok) {-->
+<!--            alert('Đã gửi nhận xét!');-->
+<!--            document.getElementById('feedbackForm').reset();-->
+<!--            assignmentSelect.innerHTML = `<option value="">&#45;&#45; Chọn bài viết &#45;&#45;</option>`;-->
+<!--            assignmentSelect.disabled = true;-->
+<!--            assignmentContentDiv.style.display = 'none';-->
+<!--        } else {-->
+<!--            alert('Lỗi khi gửi nhận xét.');-->
+<!--        }-->
+<!--    });-->
+
+<!--    loadStudents();-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Gửi nhận xét bài viết</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 30px;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        select, textarea, button {
+            width: 100%;
+            margin-top: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .assignment-content {
+            background: #fefefe;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .assignment-content h3 {
+            margin-top: 0;
+        }
+
+        .highlight {
+            background-color: yellow;
+            cursor: pointer;
+        }
+
+        .inline-comment-box {
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Gửi nhận xét bài viết của học sinh</h2>
+<form id="feedbackForm">
+    <label for="studentSelect">Chọn học sinh:</label>
+    <select id="studentSelect" required>
+        <option value="">-- Chọn học sinh --</option>
+    </select>
+
+    <label for="assignmentSelect">Chọn bài viết:</label>
+    <select id="assignmentSelect" required disabled>
+        <option value="">-- Chọn bài viết --</option>
+    </select>
+
+    <div class="assignment-content" id="assignmentContent">
+        <h3>Nội dung học sinh đã nộp:</h3>
+        <p id="submissionText" style="white-space: pre-line;"></p>
+    </div>
+
+    <label for="feedbackText">Nhận xét tổng quát:</label>
+    <textarea id="feedbackText" rows="5" required></textarea>
+
+    <div id="inlineCommentsContainer"></div>
+
+    <button type="submit">Gửi nhận xét</button>
+</form>
+
+<script>
+    const jwtToken = localStorage.getItem('jwtToken');
+    const studentSelect = document.getElementById('studentSelect');
+    const assignmentSelect = document.getElementById('assignmentSelect');
+    const assignmentContentDiv = document.getElementById('assignmentContent');
+    const submissionText = document.getElementById('submissionText');
+    const inlineCommentsContainer = document.getElementById('inlineCommentsContainer');
+
+    const userMap = new Map();
+    const assignmentMap = new Map();
+    const inlineComments = [];
+
+    async function loadStudents() {
+        const res = await fetch('/api/users/all', {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        const data = await res.json();
+        data.result.forEach(user => {
+            userMap.set(user.username, user.id);
+            const option = document.createElement('option');
+            option.value = user.username;
+            option.textContent = user.username;
+            studentSelect.appendChild(option);
+        });
+    }
+
+    studentSelect.addEventListener('change', async function () {
+        const username = this.value;
+        const userId = userMap.get(username);
+
+        assignmentSelect.innerHTML = `<option value="">-- Chọn bài viết --</option>`;
+        assignmentSelect.disabled = true;
+        assignmentContentDiv.style.display = 'none';
+
+        if (!username) return;
+
+        const res = await fetch(`/api/assignments/of?username=${username}`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        const assignments = await res.json();
+        assignmentMap.clear();
+
+        assignments.forEach(a => {
+            assignmentMap.set(a.id, a);
+            const option = document.createElement('option');
+            option.value = a.id;
+            option.textContent = a.description || `Bài viết #${a.id}`;
+            assignmentSelect.appendChild(option);
+        });
+
+        assignmentSelect.disabled = false;
+    });
+
+    assignmentSelect.addEventListener('change', async function () {
+        const assignmentId = this.value;
+        const username = studentSelect.value;
+        const userId = userMap.get(username);
+        assignmentContentDiv.style.display = 'none';
+        inlineComments.length = 0;
+        inlineCommentsContainer.innerHTML = '';
+
+        if (!assignmentId || !userId) return;
+
+        const res = await fetch(`/api/assignments/${assignmentId}/submission/${userId}`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            submissionText.textContent = 'Học sinh chưa nộp bài viết này.';
+        } else {
+            const submission = await res.json();
+            submissionText.textContent = submission.content || '(Không có nội dung)';
+        }
+
+        assignmentContentDiv.style.display = 'block';
+    });
+
+    submissionText.addEventListener('mouseup', () => {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+        if (!selectedText) return;
+
+        const comment = prompt('Nhập nhận xét cho "' + selectedText + '":');
+        if (!comment) return;
+
+        inlineComments.push({ text: selectedText, comment: comment });
+
+        const commentBox = document.createElement('div');
+        commentBox.className = 'inline-comment-box';
+        commentBox.innerHTML = `<strong>${selectedText}:</strong> ${comment}`;
+        inlineCommentsContainer.appendChild(commentBox);
+    });
+
+    document.getElementById('feedbackForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const username = studentSelect.value;
+        const userId = userMap.get(username);
+        const assignmentId = assignmentSelect.value;
+        const feedbackText = document.getElementById('feedbackText').value;
+
+        if (!assignmentId || !userId) {
+            alert("Vui lòng chọn đầy đủ thông tin.");
+            return;
+        }
+
+        const feedback = {
+            comment: feedbackText,
+            inlineComments: inlineComments
+        };
+
+        const response = await fetch(`/api/assignments/${assignmentId}/feedback/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken}`
+            },
+            body: JSON.stringify(feedback)
+        });
+
+        if (response.ok) {
+            alert('Đã gửi nhận xét!');
+            document.getElementById('feedbackForm').reset();
+            assignmentSelect.innerHTML = `<option value="">-- Chọn bài viết --</option>`;
+            assignmentSelect.disabled = true;
+            assignmentContentDiv.style.display = 'none';
+            inlineComments.length = 0;
+            inlineCommentsContainer.innerHTML = '';
+        } else {
+            alert('Lỗi khi gửi nhận xét.');
+        }
+    });
+
+    loadStudents();
+</script>
+
+</body>
+</html>

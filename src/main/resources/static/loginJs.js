@@ -73,9 +73,9 @@ loginForm.addEventListener('submit', (event) => {
 
                 // Kiểm tra nếu username là "admin", chuyển đến /dashboard, nếu không chuyển đến /home
                 if (username === 'admin@') {
-                    window.location.href = '/teacher/dashboard';
+                    window.location.href = '/teacher/user-management';
                 } else {
-                    window.location.href = '/home';
+                    window.location.href = '/student/home';
                 }
             } else {
                 alert('Đăng nhập thất bại! ' + data.message); // Hiển thị thông báo lỗi từ phản hồi

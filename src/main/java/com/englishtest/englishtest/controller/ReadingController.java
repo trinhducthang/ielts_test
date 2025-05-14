@@ -1,14 +1,18 @@
 package com.englishtest.englishtest.controller;
 
-import com.englishtest.englishtest.entity.Passage;
-import com.englishtest.englishtest.entity.Question;
-import com.englishtest.englishtest.entity.StudentAnswer;
-import com.englishtest.englishtest.entity.User;
-import com.englishtest.englishtest.repository.PassageRepository;
-import com.englishtest.englishtest.repository.QuestionRepository;
-import com.englishtest.englishtest.repository.StudentAnswerRepository;
-import com.englishtest.englishtest.repository.UserRepository;
+
+import com.englishtest.englishtest.dto.ReadingTestDTO;
+import com.englishtest.englishtest.entity.ReadingTest;
+import com.englishtest.englishtest.repository.ReadingTestRepository;
+import com.englishtest.englishtest.service.ReadingTestService;
+import org.jsoup.select.Elements;
+import org.springframework.data.domain.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import java.util.*;
 
 import org.jsoup.Jsoup;
@@ -23,71 +27,133 @@ import java.io.IOException;
 @RequestMapping("/api/reading")
 public class ReadingController {
 
-    private final PassageRepository passageRepository;
-    private final QuestionRepository questionRepository;
-    private final StudentAnswerRepository studentAnswerRepository;
-    private final UserRepository userRepository;
+    private final ReadingTestService readingTestService;
 
-    public ReadingController(PassageRepository passageRepository,
-                                 QuestionRepository questionRepository,
-                                 StudentAnswerRepository studentAnswerRepository,
-                                 UserRepository userRepository) {
-        this.passageRepository = passageRepository;
-        this.questionRepository = questionRepository;
-        this.studentAnswerRepository = studentAnswerRepository;
-        this.userRepository = userRepository;
+    private final ReadingTestRepository readingTestRepository;
+
+    public ReadingController(ReadingTestService readingTestService, ReadingTestRepository readingTestRepository) {
+        this.readingTestService = readingTestService;
+        this.readingTestRepository = readingTestRepository;
     }
 
-    @GetMapping("/passage/{id}")
-    public Map<String, Object> getPassage(@PathVariable Long id) {
-        Passage passage = passageRepository.findById(id).orElseThrow();
-        List<Question> questions = questionRepository.findByPassageId(id);
-        Map<String, Object> response = new HashMap<>();
-        response.put("passage", passage);
-        response.put("questions", questions);
-        return response;
+    @PostMapping()
+    public ReadingTest getReadingTest(@RequestParam String url) throws IOException {
+        return readingTestService.SaveHtmlFull(url);
     }
 
-    @PostMapping("/submit")
-    public String submitAnswers(@RequestParam Long userId,
-                                @RequestParam List<Long> questionIds,
-                                @RequestParam List<String> answers) {
-        User student = userRepository.findById(userId).orElseThrow();
-
-        for (int i = 0; i < questionIds.size(); i++) {
-            Question q = questionRepository.findById(questionIds.get(i)).orElseThrow();
-            StudentAnswer ans = new StudentAnswer();
-            ans.setUser(student);
-            ans.setQuestion(q);
-            ans.setAnswerText(answers.get(i));
-            ans.setCorrect(q.getCorrectAnswer().equalsIgnoreCase(answers.get(i)));
-            studentAnswerRepository.save(ans);
+    @GetMapping("/content/{id}")
+    public ResponseEntity<String> renderReadingTest(@PathVariable Long id) {
+        Optional<ReadingTest> readingTestOpt = readingTestRepository.findById(id);
+        if (readingTestOpt.isPresent()) {
+            ReadingTest test = readingTestOpt.get();
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+                    .body(test.getContent());
+        } else {
+            return ResponseEntity.notFound().build();
         }
-        return "Submitted";
-    }
-
-    @GetMapping("/result")
-    public List<StudentAnswer> getResults(@RequestParam Long userId) {
-        return studentAnswerRepository.findByUserId(userId);
     }
 
     @GetMapping("")
-    public String fetchReadingFromUrl(@RequestParam String url) {
+    public ResponseEntity<Page<ReadingTestDTO>> getReadingTestsPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<ReadingTest> pageResult = readingTestRepository.findAll(pageable);
+
+        Page<ReadingTestDTO> dtoPage = pageResult.map(test -> {
+            ReadingTestDTO dto = new ReadingTestDTO();
+            dto.setTitle(test.getTitle());
+            dto.setUrlImage(test.getUrlImage());
+            dto.setId(test.getId()); // để link tới chi tiết nếu cần
+            return dto;
+        });
+
+        return ResponseEntity.ok(dtoPage);
+    }
+
+    @GetMapping("/by-ids")
+    public ResponseEntity<Page<ReadingTestDTO>> getReadingTestsByIds(
+            @RequestParam List<Long> ids,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<ReadingTest> pageResult = readingTestRepository.findByIdIn(ids, pageable);
+
+        Page<ReadingTestDTO> dtoPage = pageResult.map(test -> {
+            ReadingTestDTO dto = new ReadingTestDTO();
+            dto.setTitle(test.getTitle());
+            dto.setUrlImage(test.getUrlImage());
+            dto.setId(test.getId());
+            return dto;
+        });
+
+        return ResponseEntity.ok(dtoPage);
+    }
+
+
+    @GetMapping("/get-solution-link")
+    public String getSolutionLink(@RequestParam String url) {
         try {
-            // Kết nối đến URL
+            // Kết nối và lấy nội dung HTML từ URL người dùng cung cấp
             Document doc = Jsoup.connect(url).get();
 
-            // Lấy phần tử chứa đoạn văn (theo class đã cho)
-            Element readingDiv = doc.selectFirst("div.reading-text");
+            // Tìm thẻ <a> có class btn-solution
+            Element aTag = doc.selectFirst("a.btn-solution");
 
-            if (readingDiv != null) {
-                // Trả về nội dung HTML của đoạn văn
-                return readingDiv.html();
+            if (aTag != null) {
+                // Lấy href gốc từ thẻ <a>
+                String href = aTag.attr("href");
+                return "https://mini-ielts.com" + href ;
             } else {
-                return "Không tìm thấy nội dung phù hợp.";
+                return "Không tìm thấy thẻ <a class='btn-solution'> trong trang.";
             }
-        } catch (IOException e) {
-            return "Lỗi khi truy cập trang: " + e.getMessage();
+
+        } catch (Exception e) {
+            return "Lỗi: " + e.getMessage();
         }
     }
+
+    @GetMapping("/get-answers")
+    public Map<String, String> getAnswers(@RequestParam String url) {
+        Map<String, String> answers = new LinkedHashMap<>(); // Giữ thứ tự câu hỏi
+
+        try {
+            // Kết nối tới trang
+            Document doc = Jsoup.connect(url).get();
+
+            // Lấy đúng bảng chứa đáp án
+            Element table = doc.selectFirst("table.table.table-bordered.table-condensed.text-left");
+
+            if (table != null) {
+                Elements tds = table.select("td");
+
+                for (Element td : tds) {
+                    Element bTag = td.selectFirst("b");
+                    if (bTag != null) {
+                        String questionNumber = bTag.text().replace(".", "").trim(); // "1." -> "1"
+                        String fullText = td.text(); // "1. YES"
+                        String answerText = fullText.replaceFirst("\\d+\\.\\s*", "").trim(); // "YES"
+
+                        answers.put(questionNumber, answerText);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            answers.put("error", e.getMessage());
+        }
+
+        return answers;
+    }
+
+
+
+    @GetMapping("/getByUserId/{userId}")
+    public List<Long> getReadingTestsForUser(@PathVariable Long userId){
+        return readingTestService.getReadingTestsForUser(userId);
+    }
+
+
 }

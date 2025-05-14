@@ -19,9 +19,8 @@ public interface UserService {
 //    @PostAuthorize("(returnObject.username == authentication.name) || hasRole('ROLE_ADMIN')")
     public UserDTO getUser(Long id);
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_TEACHER')")
     public List<UserDTO> getUsers();
-
 
     public String getFullName(String username);
 

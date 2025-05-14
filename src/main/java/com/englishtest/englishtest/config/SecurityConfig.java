@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, PUBLIC_UI_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ROLE_ADMIN ).hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE,"/loanOffer/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT,"/loanOffer/**","api/users/updatePassword/**","/bank/getBank/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT,"/loanOffer/**","api/users/updatePassword/**","/bank/getBank/**","/**").permitAll()
                         .anyRequest().authenticated()
                 )
 //                .oauth2Login(oauth2 -> oauth2

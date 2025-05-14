@@ -4,21 +4,24 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 @Entity
 @Data
+@Table
 public class StudentAnswer {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private User user;
+    private Long studentId;
 
-    @ManyToOne
-    private Question question;
 
-    private String answerText;
-    private boolean isCorrect;
+    private String answer;
 
-    // Getters and setters
+    private int points;
+
+    private String totalTime;
+
+    private LocalDateTime timeToSubmit;
 }
