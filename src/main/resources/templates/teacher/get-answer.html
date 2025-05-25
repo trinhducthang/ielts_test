@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Xem kết quả bài làm</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f4f8;
+            padding: 20px;
+            color: #333;
+        }
+
+        h2 {
+            color: #1976d2;
+        }
+
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .result-section {
+            margin-top: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .result-section p {
+            margin: 8px 0;
+            white-space: pre-line;
+        }
+
+        .highlight {
+            color: #1976d2;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Xem kết quả bài làm của học sinh</h2>
+<form id="resultForm">
+    <label for="studentSelect">Chọn học sinh:</label>
+    <select id="studentSelect" required>
+        <option value="">-- Chọn học sinh --</option>
+    </select>
+
+    <label for="assignmentSelect">Chọn bài đọc:</label>
+    <select id="assignmentSelect" required disabled>
+        <option value="">-- Chọn bài đọc --</option>
+    </select>
+
+    <div class="result-section" id="resultSection" style="display: none;">
+        <h3>Kết quả bài làm:</h3>
+        <p><span class="highlight">Thời gian nộp:</span> <span id="timeToSubmit"></span></p>
+        <p><span class="highlight">Tổng thời gian làm bài:</span> <span id="totalTime"></span></p>
+        <p><span class="highlight">Số điểm:</span> <span id="points"></span></p>
+        <p><span class="highlight">Câu trả lời:</span></p>
+        <p id="answerText"></p>
+    </div>
+</form>
+
+<script>
+    const studentSelect = document.getElementById('studentSelect');
+    const assignmentSelect = document.getElementById('assignmentSelect');
+    const resultSection = document.getElementById('resultSection');
+
+    const timeToSubmitEl = document.getElementById('timeToSubmit');
+    const totalTimeEl = document.getElementById('totalTime');
+    const pointsEl = document.getElementById('points');
+    const answerTextEl = document.getElementById('answerText');
+
+    // Bước 1: Load danh sách học sinh
+    const jwtToken = localStorage.getItem('jwtToken');
+
+    fetch('/api/users/all', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
+        }
+    })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Lỗi xác thực hoặc máy chủ không phản hồi');
+            }
+            return res.json();
+        })
+        .then(data => {
+            const users = data.result; // ✅ Lấy mảng từ response chuẩn
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.fullName; // hoặc user.username
+                studentSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Lỗi khi gọi API:', error);
+            alert('Không thể tải danh sách học sinh. Vui lòng đăng nhập lại hoặc kiểm tra kết nối.');
+        });
+
+
+
+    // Khi chọn học sinh → load bài đọc đã giao
+    studentSelect.addEventListener('change', () => {
+        const userId = studentSelect.value;
+        assignmentSelect.innerHTML = `<option value="">-- Chọn bài đọc --</option>`;
+        assignmentSelect.disabled = true;
+        resultSection.style.display = 'none';
+
+        if (!userId) return;
+
+        fetch(`/api/reading/getByUserId/${userId}`)
+            .then(res => res.json())
+            .then(readings => {
+                readings.forEach(r => {
+                    const option = document.createElement('option');
+                    option.value = r.id;
+                    option.textContent = r.title;
+                    assignmentSelect.appendChild(option);
+                });
+                assignmentSelect.disabled = false;
+            });
+    });
+
+    // Khi chọn bài đọc → load bài làm (StudentAnswer)
+    assignmentSelect.addEventListener('change', () => {
+        const userId = studentSelect.value;
+        const readingId = assignmentSelect.value;
+
+        resultSection.style.display = 'none';
+
+        if (!userId || !readingId) return;
+
+        fetch(`/api/student-answer/by-student/${userId}`)
+            .then(res => res.json())
+            .then(answers => {
+                const answer = answers.find(a => a.readingTestId == readingId);
+                if (answer) {
+                    timeToSubmitEl.textContent = new Date(answer.timeToSubmit).toLocaleString();
+                    totalTimeEl.textContent = answer.totalTime;
+                    pointsEl.textContent = answer.points;
+                    answerTextEl.textContent = answer.answer;
+
+                    resultSection.style.display = 'block';
+                } else {
+                    resultSection.style.display = 'block';
+                    timeToSubmitEl.textContent = 'Chưa nộp';
+                    totalTimeEl.textContent = '-';
+                    pointsEl.textContent = '0';
+                    answerTextEl.textContent = 'Không có dữ liệu';
+                }
+            });
+    });
+</script>
+
+</body>
+</html>

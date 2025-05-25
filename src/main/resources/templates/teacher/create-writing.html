@@ -1,173 +1,3 @@
-<!--<!DOCTYPE html>-->
-<!--<html lang="en">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
-<!--    <title>Giao bài viết có ảnh</title>-->
-<!--    <style>-->
-<!--        /* Cơ bản */-->
-<!--        body {-->
-<!--            font-family: Arial, sans-serif;-->
-<!--            background-color: #f4f7f6;-->
-<!--            margin: 0;-->
-<!--            padding: 0;-->
-<!--            display: flex;-->
-<!--            justify-content: center;-->
-<!--            align-items: center;-->
-<!--            height: 100vh;-->
-<!--        }-->
-
-<!--        h2 {-->
-<!--            text-align: center;-->
-<!--            color: #333;-->
-<!--            margin-bottom: 20px;-->
-<!--        }-->
-
-<!--        .container {-->
-<!--            background-color: #fff;-->
-<!--            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);-->
-<!--            border-radius: 8px;-->
-<!--            padding: 30px;-->
-<!--            width: 100%;-->
-<!--            max-width: 600px;-->
-<!--        }-->
-
-<!--        /* Các trường nhập liệu */-->
-<!--        input[type="text"], input[type="date"], textarea {-->
-<!--            width: 100%;-->
-<!--            padding: 12px;-->
-<!--            margin: 10px 0;-->
-<!--            border-radius: 8px;-->
-<!--            border: 1px solid #ddd;-->
-<!--            font-size: 16px;-->
-<!--            background-color: #f9f9f9;-->
-<!--        }-->
-
-<!--        input[type="text"]:focus, input[type="date"]:focus, textarea:focus {-->
-<!--            border-color: #3498db;-->
-<!--            outline: none;-->
-<!--        }-->
-
-<!--        textarea {-->
-<!--            height: 120px;-->
-<!--            resize: vertical;-->
-<!--        }-->
-
-<!--        button {-->
-<!--            background-color: #3498db;-->
-<!--            color: white;-->
-<!--            border: none;-->
-<!--            padding: 15px 20px;-->
-<!--            font-size: 16px;-->
-<!--            width: 100%;-->
-<!--            border-radius: 8px;-->
-<!--            cursor: pointer;-->
-<!--            margin-top: 20px;-->
-<!--        }-->
-
-<!--        button:hover {-->
-<!--            background-color: #2980b9;-->
-<!--        }-->
-
-<!--        /* Thông báo */-->
-<!--        .alert {-->
-<!--            margin-top: 15px;-->
-<!--            padding: 10px;-->
-<!--            background-color: #28a745;-->
-<!--            color: white;-->
-<!--            border-radius: 5px;-->
-<!--            text-align: center;-->
-<!--            display: none;-->
-<!--        }-->
-
-<!--        /* Thêm một phần nhỏ bên dưới form */-->
-<!--        .small-text {-->
-<!--            font-size: 14px;-->
-<!--            text-align: center;-->
-<!--            margin-top: 15px;-->
-<!--            color: #777;-->
-<!--        }-->
-<!--    </style>-->
-<!--</head>-->
-<!--<body>-->
-<!--<div class="container">-->
-<!--    <h2>Giao bài viết</h2>-->
-<!--    <form id="assignmentForm">-->
-<!--        <textarea id="description" name="description" placeholder="Nội dung" required></textarea>-->
-<!--        <input type="date" id="dueDate" name="dueDate" placeholder="Ngày hết hạn">-->
-<!--        <input type="text" id="assignedUserIds" name="assignedUserIds" placeholder="ID học sinh (cách nhau bằng dấu phẩy)" required>-->
-<!--        <input type="text" id="imageUrl" name="imageUrl" placeholder="URL ảnh" required>-->
-<!--        <button type="submit">Giao bài</button>-->
-<!--    </form>-->
-
-<!--    <div class="alert" id="alertMessage">Giao bài thành công!</div>-->
-
-<!--    <p class="small-text">Chỉ giáo viên có thể giao bài và cung cấp URL ảnh minh họa.</p>-->
-<!--</div>-->
-
-<!--<script>-->
-<!--    document.getElementById('assignmentForm').addEventListener('submit', async function (e) {-->
-<!--        e.preventDefault();-->
-
-<!--        // Tạo đối tượng dữ liệu từ form-->
-<!--        const assignmentData = {-->
-<!--            description: document.getElementById('description').value,-->
-<!--            assignedUserIds: document.getElementById('assignedUserIds').value.split(',').map(id => id.trim()),-->
-<!--            imageUrl: document.getElementById('imageUrl').value,  // Nhận URL ảnh từ form-->
-<!--            dueDate: document.getElementById('dueDate').value ? document.getElementById('dueDate').value : null-->
-<!--        };-->
-
-<!--        const jwtToken = localStorage.getItem('jwtToken');-->
-
-<!--        // Gửi yêu cầu POST với JSON-->
-<!--        const response = await fetch('/api/assignments', {-->
-<!--            method: 'POST',-->
-<!--            headers: {-->
-<!--                'Content-Type': 'application/json',-->
-<!--                'Authorization': `Bearer ${jwtToken}`  // Thêm Bearer token để xác thực-->
-<!--            },-->
-<!--            body: JSON.stringify(assignmentData)  // Chuyển dữ liệu thành JSON-->
-<!--        });-->
-
-<!--        // Kiểm tra mã trạng thái HTTP-->
-<!--        if (response.ok) {-->
-<!--            try {-->
-<!--                // Phản hồi từ server là văn bản, không phải JSON-->
-<!--                const result = await response.text();  // Sử dụng text() thay vì json()-->
-
-<!--                const alertMessage = document.getElementById('alertMessage');-->
-<!--                alertMessage.textContent = result || 'Giao bài thành công!';-->
-<!--                alertMessage.style.display = 'block';-->
-<!--                setTimeout(() => {-->
-<!--                    alertMessage.style.display = 'none';-->
-<!--                }, 3000);  // Ẩn thông báo sau 3 giây-->
-<!--            } catch (error) {-->
-<!--                // Nếu có lỗi khi xử lý phản hồi-->
-<!--                console.log('Error processing response:', error);-->
-<!--                const alertMessage = document.getElementById('alertMessage');-->
-<!--                alertMessage.textContent = 'Có lỗi xảy ra khi giao bài.';-->
-<!--                alertMessage.style.backgroundColor = '#dc3545'; // Màu đỏ cho thông báo lỗi-->
-<!--                alertMessage.style.display = 'block';-->
-<!--                setTimeout(() => {-->
-<!--                    alertMessage.style.display = 'none';-->
-<!--                }, 3000);  // Ẩn thông báo sau 3 giây-->
-<!--            }-->
-<!--        } else {-->
-<!--            // Phản hồi lỗi (4xx, 5xx)-->
-<!--            const errorResponse = await response.text();-->
-<!--            const alertMessage = document.getElementById('alertMessage');-->
-<!--            alertMessage.textContent = errorResponse || 'Giao bài thất bại!';-->
-<!--            alertMessage.style.backgroundColor = '#dc3545'; // Màu đỏ cho thông báo lỗi-->
-<!--            alertMessage.style.display = 'block';-->
-<!--            setTimeout(() => {-->
-<!--                alertMessage.style.display = 'none';-->
-<!--            }, 3000);  // Ẩn thông báo sau 3 giây-->
-<!--        }-->
-<!--    });-->
-
-<!--</script>-->
-<!--</body>-->
-<!--</html>-->
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -259,9 +89,88 @@
             margin-top: 15px;
             color: #777;
         }
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #fff;
+            height: 100vh;
+            padding-top: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            background-color: #34495e;
+            border-top: 1px solid #2c3e50;
+        }
+
+        .menu-item:hover {
+            background-color: #1abc9c;
+        }
+
+        .submenu {
+            display: none;
+            background-color: #3c5a72;
+        }
+
+        .submenu a {
+            display: block;
+            padding: 10px 40px;
+            color: #ecf0f1;
+            text-decoration: none;
+        }
+
+        .submenu a:hover {
+            background-color: #16a085;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            padding-left: 250px; /* Đẩy nội dung chính sang phải để không bị che bởi sidebar */
+        }
+
     </style>
 </head>
 <body>
+<div class="sidebar">
+    <h2>Menu</h2>
+
+    <div class="menu-item" onclick="toggleSubmenu('userSubmenu')">Quản lí user</div>
+    <div id="userSubmenu" class="submenu">
+        <a href="/teacher/course-management">Quản lí lớp học</a>
+        <a href="/teacher/user-management">Quản lí user</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('writingSubmenu')">Writing Skill</div>
+    <div id="writingSubmenu" class="submenu">
+        <a href="/teacher/create-writing">Giao bài viết</a>
+        <a href="/teacher/give-feedback">Nhận xét bài viết</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('speakingSubmenu')">Speaking Skill</div>
+    <div id="speakingSubmenu" class="submenu">
+        <a href="#">Giao bài Speaking</a>
+        <a href="#">Nhận xét bài Speaking</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('readingSubmenu')">Reading Skill</div>
+    <div id="readingSubmenu" class="submenu">
+        <a href="/teacher/reading-test">Giao bài Reading</a>
+        <!-- Bạn có thể thêm các submenu khác tại đây -->
+    </div>
+</div>
+
 
 <div class="container">
     <h2>Giao bài viết</h2>
@@ -289,6 +198,11 @@
 </div>
 
 <script>
+
+    function toggleSubmenu(id) {
+        const submenu = document.getElementById(id);
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
     const jwtToken = localStorage.getItem('jwtToken');
 
     // Load danh sách lớp khi mở trang

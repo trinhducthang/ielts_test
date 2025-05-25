@@ -6,6 +6,7 @@ import com.englishtest.englishtest.entity.User;
 import com.englishtest.englishtest.mapper.UserMapper;
 import com.englishtest.englishtest.repository.UserRepository;
 import com.englishtest.englishtest.service.itf.UserService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -49,6 +50,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.getUserByUsername(username);
     }
 
+
+    @Transactional
     @Override
     public User updatePassword(String username, String password) {
         User user = userRepository.getUserByUsername(username);

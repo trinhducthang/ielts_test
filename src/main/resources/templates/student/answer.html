@@ -306,7 +306,8 @@
         try {
             const response = await saveStudentAnswers({
                 studentId: parseInt(userId),
-                answers: formattedAnswers,  // Send the formatted answers
+                readingTestId: idReadingTest,
+                answers: JSON.stringify(formattedAnswers),  // Send the formatted answers
                 points: correct,
                 totalTime: timeTaken,
                 timeToSubmit: new Date().toISOString()  // Thời gian hiện tại

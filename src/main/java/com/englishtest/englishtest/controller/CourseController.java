@@ -1,12 +1,9 @@
 package com.englishtest.englishtest.controller;
 
 import com.englishtest.englishtest.entity.Course;
-import com.englishtest.englishtest.entity.ReadingTest;
 import com.englishtest.englishtest.entity.User;
 import com.englishtest.englishtest.repository.CourseRepository;
-import com.englishtest.englishtest.repository.ReadingTestRepository;
 import com.englishtest.englishtest.service.CourseService;
-import com.englishtest.englishtest.service.itf.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +25,6 @@ public class CourseController {
     @Autowired
     private CourseRepository courseRepository;
 
-    @Autowired
-    private ReadingTestRepository readingTestRepository;
 
     @GetMapping
     public List<Course> getAllCourses() {
@@ -90,19 +85,5 @@ public class CourseController {
         return ResponseEntity.ok(course);
     }
 
-    @PutMapping("/{courseId}/reading-tests")
-    public ResponseEntity<?> assignReadingTestsToCourse(
-            @PathVariable Long courseId,
-            @RequestBody List<Long> readingTestIds) {
 
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
-
-        List<ReadingTest> readingTests = readingTestRepository.findAllById(readingTestIds);
-
-        course.setReadingTests(readingTests);
-        courseRepository.save(course);
-
-        return ResponseEntity.ok(course);
-    }
 }

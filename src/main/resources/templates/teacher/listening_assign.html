@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Giao Bài Nghe</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        input, select, button { margin: 8px 0; padding: 8px; width: 100%; }
+    </style>
+</head>
+<body>
+<h2>Upload Bài Nghe</h2>
+<form id="uploadForm">
+    <input type="text" name="title" placeholder="Tên bài nghe" required />
+    <input type="number" name="questionCount" min="1" max="40" placeholder="Số câu hỏi (1-40)" required />
+    <input type="file" name="audio" accept="audio/*" required />
+    <input type="file" name="pdf" accept="application/pdf" required />
+    <button type="submit">Tải lên</button>
+</form>
+
+<h2>Giao bài cho học sinh</h2>
+<select id="exerciseSelect"></select>
+<select id="studentSelect" multiple></select>
+<button onclick="assignExercise()">Giao bài</button>
+
+<script>
+    const token = localStorage.getItem('jwtToken');
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch('/api/listening/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        alert("Đã upload: " + data.title);
+        loadExercises();
+    });
+
+    async function loadExercises() {
+        const res = await fetch('/api/listening/assigned?username=admin');
+        const list = await res.json();
+        const sel = document.getElementById('exerciseSelect');
+        sel.innerHTML = list.map(e => `<option value="${e.id}">${e.title}</option>`).join('');
+    }
+
+    async function loadStudents() {
+
+
+        const res = await fetch('/api/users/all', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!res.ok) {
+            console.error('Failed to load students:', res.status);
+            return;
+        }
+
+        const data = await res.json();
+        const students = data.result.filter(u => u.role === 'STUDENT'); // 👈 Lọc chỉ học sinh
+
+        const sel = document.getElementById('studentSelect');
+        sel.innerHTML = students.map(s => `<option value="${s.id}">${s.fullName}</option>`).join('');
+    }
+
+
+
+    async function assignExercise() {
+        const exId = document.getElementById('exerciseSelect').value;
+        const studentIds = Array.from(document.getElementById('studentSelect').selectedOptions).map(opt => opt.value);
+        const res = await fetch(`/api/listening/${exId}/assign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentIds)
+        });
+        alert("Đã giao bài");
+    }
+
+    loadExercises();
+    loadStudents();
+</script>
+</body>
+</html>

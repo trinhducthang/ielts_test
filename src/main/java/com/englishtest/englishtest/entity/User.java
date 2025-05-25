@@ -32,7 +32,4 @@ public class User {
     @JoinColumn(name = "course_id")
     @JsonBackReference
     private Course course;
-
-    @ManyToMany
-    private List<ReadingTest> readingTests;
 }

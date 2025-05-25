@@ -6,22 +6,28 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.List;
+
 @Entity
 @Data
-@Table
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StudentAnswer {
-
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long studentId;
+    @ManyToOne
+    private ListeningExercise exercise;
 
+    @ManyToOne
+    private User student;
 
-    private String answer;
-
-    private int points;
-
-    private String totalTime;
-
-    private LocalDateTime timeToSubmit;
+    @ElementCollection
+    private List<String> answers;
 }

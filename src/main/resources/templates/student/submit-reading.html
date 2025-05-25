@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Làm bài Reading - Hiển thị nhiều trang PDF</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .left-pane, .right-pane {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .left-pane {
+            width: 50%;
+            border-right: 1px solid #ccc;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #pdfContainer {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        canvas {
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ccc;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .right-pane {
+            width: 50%;
+            background-color: #fafafa;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .answer-field {
+            margin-bottom: 10px;
+        }
+
+        .answer-field label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .answer-field input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #downloadLink {
+            margin-top: 10px;
+            display: inline-block;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        #downloadLink:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+    <div class="left-pane">
+        <h2>Đề bài Reading</h2>
+        <div id="pdfContainer"></div>
+        <a id="downloadLink" href="#" target="_blank" download>⬇ Tải xuống file PDF</a>
+    </div>
+
+    <div class="right-pane">
+        <h2>Nhập đáp án của bạn</h2>
+        <form id="answerForm">
+            <div id="answerFields"></div>
+            <button type="submit">Nộp bài</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const jwtToken = localStorage.getItem("jwtToken");
+    const urlParams = new URLSearchParams(window.location.search);
+    const assignmentId = urlParams.get("assignmentId");
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
+
+    async function loadReadingAssignment() {
+        if (!assignmentId) {
+            alert("Không có assignmentId trong URL.");
+            return;
+        }
+
+        const res = await fetch(`/api/reading/assignments/${assignmentId}`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+        });
+
+        if (!res.ok) {
+            alert("Không thể tải bài đọc.");
+            return;
+        }
+
+        const data = await res.json();
+
+        // Link tải file
+        document.getElementById("downloadLink").href = data.pdfUrl;
+
+        // Load PDF với PDF.js và render tất cả các trang
+        const loadingTask = pdfjsLib.getDocument(data.pdfUrl);
+        loadingTask.promise.then(async pdf => {
+            const pdfContainer = document.getElementById("pdfContainer");
+            pdfContainer.innerHTML = ""; // Xóa nếu có pdf cũ
+
+            for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const scale = 1.5;
+                const viewport = page.getViewport({ scale });
+
+                const canvas = document.createElement('canvas');
+                canvas.style.marginBottom = "10px";
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+
+                await page.render(renderContext).promise;
+
+                pdfContainer.appendChild(canvas);
+            }
+        }).catch(err => {
+            console.error(err);
+            alert("Lỗi khi hiển thị PDF.");
+        });
+
+        // Tạo form đáp án
+        const answerFields = document.getElementById("answerFields");
+        answerFields.innerHTML = "";
+
+        for (let i = 1; i <= data.totalQuestions; i++) {
+            const div = document.createElement("div");
+            div.className = "answer-field";
+            div.innerHTML = `
+                <label for="answer${i}">Câu ${i}:</label>
+                <input type="text" id="answer${i}" name="answer${i}" required />
+            `;
+            answerFields.appendChild(div);
+        }
+    }
+
+    document.getElementById("answerForm").addEventListener("submit", async e => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const answers = {};
+
+        for (const [key, value] of formData.entries()) {
+            const questionNumber = key.replace("answer", "");
+            answers[questionNumber] = value.trim();
+        }
+
+        const submissionPayload = {
+            userId: parseInt(localStorage.getItem("userId")), // Lấy từ localStorage
+            answers: answers,
+            submitted: true,
+            submittedAt: new Date().toISOString() // ISO string cho chuẩn
+        };
+
+        const res = await fetch(`/api/reading/assignments/${assignmentId}/submit`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${jwtToken}`,
+            },
+            body: JSON.stringify(submissionPayload),
+        });
+
+        if (res.ok) {
+            alert("Nộp bài thành công!");
+            window.location.href = "/student/home";
+        } else {
+            const errText = await res.text();
+            alert("Lỗi khi nộp bài: " + errText);
+        }
+    });
+
+
+    window.onload = loadReadingAssignment;
+</script>
+
+</body>
+</html>

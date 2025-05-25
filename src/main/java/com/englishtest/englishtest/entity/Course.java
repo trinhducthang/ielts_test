@@ -19,12 +19,4 @@ public class Course {
     @JsonManagedReference
     private List<User> users;
 
-    @ManyToMany
-    @JoinTable(
-            name = "course_reading_test",
-            joinColumns = @JoinColumn(name = "course_id"),
-            inverseJoinColumns = @JoinColumn(name = "reading_test_id")
-    )
-    @JsonIgnore
-    private List<ReadingTest> readingTests;
 }

@@ -16,10 +16,6 @@ public class UIController {
         return "logout";
     }
 
-    @GetMapping("/teacher/assigment")
-    public String index() {
-        return "teacher/assignment";
-    }
 
     @GetMapping("/student/answer/reading")
     public String studentDashboard() {
@@ -75,5 +71,25 @@ public class UIController {
     @GetMapping("/student/writing-submitted")
     public String writing() {
         return "student/writing-submitted";
+    }
+
+    @GetMapping("/teacher/get-answer")
+    public String getAnswer() {
+        return "teacher/get-answer";
+    }
+
+    @GetMapping("/student/listening")
+    public String listening() {
+        return "student/student_exercises";
+    }
+
+    @GetMapping("/teacher/listening")
+    public String listening2() {
+        return "teacher/listening_assign";
+    }
+
+    @GetMapping("/student/submit-reading")
+    public String submitReading() {
+        return "student/submit-reading";
     }
 }

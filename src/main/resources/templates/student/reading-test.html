@@ -1,222 +1,139 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Quản lý Bài Đọc theo User</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bài viết của tôi</title>
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
             margin: 0;
-            background-color: #f8f9fa;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
             color: #333;
         }
-
-        header {
-            background-color: #1976d2;
-            color: white;
-            padding: 15px;
-            text-align: center;
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .assignment-content {
             font-size: 20px;
             font-weight: bold;
+            color: #333;
         }
-
-        .container {
-            max-width: 1100px;
-            margin: 20px auto;
-            padding: 0 15px;
-        }
-
-        .user-input {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .user-input input {
-            padding: 8px;
+        .assignment-time, .assignment-due, .assignment-status, .assignment-score {
             font-size: 14px;
-            width: 200px;
+            color: #555;
+            margin-top: 8px;
         }
-
-        .user-input button {
-            padding: 8px 14px;
-            background-color: #1976d2;
-            border: none;
+        .status-submitted {
+            color: #28a745; /* xanh lá */
+        }
+        .status-not-submitted {
+            color: #dc3545; /* đỏ */
+        }
+        button {
+            background-color: #007bff;
             color: white;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-            transition: transform 0.2s ease-in-out;
-            font-size: 14px;
-        }
-
-        .card:hover {
-            transform: scale(1.02);
-        }
-
-        .card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .card-body {
-            padding: 10px;
-        }
-
-        .card h3 {
-            font-size: 14px;
-            margin: 0 0 8px;
-            line-height: 1.3em;
-            height: 2.6em;
-            overflow: hidden;
-        }
-
-        .card a {
-            color: #1976d2;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 13px;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin: 25px 0;
-            gap: 10px;
-        }
-
-        .pagination button {
-            background-color: #1976d2;
-            color: white;
+            padding: 10px 20px;
             border: none;
-            padding: 8px 16px;
-            font-size: 14px;
+            border-radius: 5px;
             cursor: pointer;
-            border-radius: 4px;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
         }
-
-        .pagination span {
-            padding: 8px;
-            font-size: 14px;
-        }
-
-        @media (max-width: 1000px) {
-            .grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media (max-width: 700px) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
+        button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-
-<header>Quản Lý Bài Đọc Theo User</header>
-
 <div class="container">
-    <div class="user-input">
-    </div>
-
-    <div id="reading-list" class="grid">
-        <!-- Các bài đọc sẽ được hiển thị tại đây -->
-    </div>
-
-    <div class="pagination">
-        <button onclick="loadPage(currentPage - 1)">← Trước</button>
-        <span id="page-number">Trang 1</span>
-        <button onclick="loadPage(currentPage + 1)">Sau →</button>
-    </div>
+    <h1>Bài viết của tôi</h1>
+    <ul id="assignmentList"></ul>
 </div>
 
 <script>
-    let currentPage = 0;
-    let readingTestIds = [];
+    const jwtToken = localStorage.getItem('jwtToken');
 
-    function loadUserReadings() {
-        const userId = localStorage.getItem('userId');
-        if (!userId) return alert("Vui lòng nhập User ID");
+    async function loadAssignments() {
+        const response = await fetch('/api/reading/assignments/mine', {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
 
-        fetch(`/api/reading/getByUserId/${userId}`)
-            .then(response => response.json())
-            .then(ids => {
-                if (!ids || ids.length === 0) {
-                    alert("Không có bài đọc nào cho người dùng này.");
-                    document.getElementById('reading-list').innerHTML = '';
-                    document.getElementById('page-number').innerText = "Trang 1";
-                    return;
+        if (response.ok) {
+            const data = await response.json();
+            const list = document.getElementById('assignmentList');
+
+            for (const a of data) {
+                const li = document.createElement('li');
+
+                const createdAt = new Date(a.timeCreated).toLocaleString();
+                const dueDate = a.dueDate ? new Date(a.dueDate).toLocaleDateString() : "Không có";
+
+                let submissionData = null;
+                try {
+                    const submissionRes = await fetch(`/api/reading/assignments/${a.id}/submission`, {
+                        headers: { 'Authorization': `Bearer ${jwtToken}` }
+                    });
+
+                    if (submissionRes.ok) {
+                        submissionData = await submissionRes.json();
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi kiểm tra trạng thái nộp bài:", e);
                 }
-                readingTestIds = ids;
-                loadPage(0);
-            })
-            .catch(err => {
-                alert("Không thể tải dữ liệu người dùng.");
-                console.error(err);
-            });
+
+                const submittedAtText = submissionData?.submittedAt
+                    ? new Date(submissionData.submittedAt).toLocaleString()
+                    : "";
+                const scoreText = submissionData?.score !== undefined
+                    ? submissionData.score
+                    : "-";
+
+                li.innerHTML = `
+                    <div class="assignment-content">${a.description}</div>
+                    <div class="assignment-time">Thời gian giao bài: ${createdAt}</div>
+                    <div class="assignment-due">Hạn nộp: ${dueDate}</div>
+                    <div class="assignment-status ${submissionData ? 'status-submitted' : 'status-not-submitted'}">
+                        Trạng thái: ${submissionData ? 'Đã nộp' : 'Chưa nộp'}
+                    </div>
+
+                    ${submissionData ? `
+                        <div class="assignment-time">Thời gian nộp: ${submittedAtText}</div>
+                        <div class="assignment-score">Số điểm: ${scoreText}</div>
+                    ` : `
+                        <button onclick="submitAssignment('${a.id}')">Nộp bài</button>
+                    `}
+                `;
+
+                list.appendChild(li);
+            }
+        } else {
+            console.error('Lỗi khi tải bài viết');
+        }
     }
-    loadUserReadings()
-    function loadPage(page) {
-        if (page < 0) return;
 
-        const totalPages = Math.ceil(readingTestIds.length / 10);
-        if (page >= totalPages) return;
-
-        const params = new URLSearchParams();
-        readingTestIds.forEach(id => params.append("ids", id));
-        params.append("page", page);
-        params.append("size", 10);
-
-        fetch(`/api/reading/by-ids?${params.toString()}`)
-            .then(response => response.json())
-            .then(data => {
-                const list = document.getElementById('reading-list');
-                list.innerHTML = '';
-                if (!data.content || data.content.length === 0) return;
-                data.content.forEach(item => {
-                    console.log(item.id)
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <img src="${item.urlImage}" alt="${item.title}">
-                        <div class="card-body">
-                            <h3>${item.title}</h3>
-                            <a href="/student/answer/reading?idTest=${item.id}" target="_blank">Làm bài</a>
-
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-
-                currentPage = page;
-                document.getElementById('page-number').innerText = `Trang ${currentPage + 1}`;
-            });
+    function submitAssignment(assignmentId) {
+        window.location.href = `/student/submit-reading?assignmentId=${assignmentId}`;
     }
+
+    window.onload = loadAssignments;
 </script>
-
 </body>
 </html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bài Nghe Của Tôi</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        input[type=text] { width: 100%; margin: 4px 0; padding: 6px; }
+        button { padding: 8px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<h2>Danh sách bài nghe</h2>
+<div id="exerciseList"></div>
+
+<script>
+    const username = 'admin@'; // Replace with logged-in user's username
+
+    async function loadExercises() {
+        const res = await fetch(`/api/listening/assigned?username=${username}`);
+        const list = await res.json();
+        const container = document.getElementById('exerciseList');
+        container.innerHTML = list.map(e => `
+        <div style="border:1px solid #ccc; padding: 10px; margin: 10px 0;">
+          <h3>${e.title}</h3>
+          <audio controls src="/uploads/${e.audioFilePath}"></audio><br/>
+          <a href="/uploads/${e.pdfFilePath}" target="_blank">Xem đề bài (PDF)</a><br/>
+          <form onsubmit="return submitAnswers(event, ${e.id}, ${e.questionCount})">
+            ${Array.from({ length: e.questionCount }, (_, i) => `
+              <input type="text" name="answer${i}" placeholder="Câu ${i + 1}" required />
+            `).join('')}
+            <button type="submit">Nộp bài</button>
+          </form>
+        </div>
+      `).join('');
+    }
+
+    async function submitAnswers(event, exerciseId, count) {
+        event.preventDefault();
+        const form = event.target;
+        const answers = Array.from({ length: count }, (_, i) => form[`answer${i}`].value);
+        const res = await fetch(`/api/listening/${exerciseId}/submit?username=${username}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(answers)
+        });
+        if (res.ok) {
+            alert("Đã nộp bài!");
+            form.reset();
+        } else {
+            alert("Lỗi: " + (await res.text()));
+        }
+    }
+
+    loadExercises();
+</script>
+</body>
+</html>
