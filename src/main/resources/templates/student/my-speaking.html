@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bài Speaking của tôi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .assignment-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .assignment-content {
+            font-size: 16px;
+            margin-top: 10px;
+            color: #555;
+        }
+        .assignment-time, .assignment-due, .assignment-status {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+        }
+        .status-submitted {
+            color: #28a745;  /* xanh lá */
+        }
+        .status-not-submitted {
+            color: #dc3545;  /* đỏ */
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Bài Speaking của tôi</h1>
+    <ul id="speakingAssignmentList"></ul>
+</div>
+
+<script>
+    const jwtToken = localStorage.getItem('jwtToken');
+
+    async function loadSpeakingAssignments() {
+        try {
+            const response = await fetch('/api/speaking/assignments/mine', {
+                headers: { 'Authorization': `Bearer ${jwtToken}` }
+            });
+
+            if (!response.ok) {
+                console.error('Lỗi khi tải bài Speaking');
+                return;
+            }
+
+            const data = await response.json();
+            const list = document.getElementById('speakingAssignmentList');
+            list.innerHTML = '';
+
+            for (const a of data) {
+                const li = document.createElement('li');
+
+                const createdAt = new Date(a.timeCreated).toLocaleString();
+                const dueDate = a.dueDate ? new Date(a.dueDate).toLocaleDateString() : "Không có";
+
+                // Kiểm tra bài nộp Speaking
+                let isSubmitted = false;
+                try {
+                    const submissionRes = await fetch(`/api/speaking/assignments/${a.id}/submission`, {
+                        headers: { 'Authorization': `Bearer ${jwtToken}` }
+                    });
+                    if (submissionRes.ok) {
+                        isSubmitted = true;
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi kiểm tra trạng thái nộp bài Speaking:", e);
+                }
+
+                const statusText = isSubmitted ? 'Đã nộp' : 'Chưa nộp';
+                const statusClass = isSubmitted ? 'status-submitted' : 'status-not-submitted';
+
+                li.innerHTML = `
+                    <div class="assignment-content"><b>${a.description}</b></div>
+                    <div class="assignment-time">Thời gian giao bài: ${createdAt}</div>
+                    <div class="assignment-due">Hạn nộp: ${dueDate}</div>
+                    <div class="assignment-status ${statusClass}">Trạng thái: ${statusText}</div>
+                    ${isSubmitted ?
+                    `<button onclick="viewSubmittedSpeaking('${a.id}')">Xem bài đã nộp</button>` :
+                    `<button onclick="submitSpeaking('${a.id}')">Nộp bài</button>`}
+                `;
+
+                list.appendChild(li);
+            }
+        } catch (error) {
+            console.error('Lỗi khi tải bài Speaking:', error);
+        }
+    }
+
+    function submitSpeaking(assignmentId) {
+        // Chuyển hướng sang trang nộp bài Speaking
+        window.location.href = `/student/submit-speaking?assignmentId=${assignmentId}`;
+    }
+
+    function viewSubmittedSpeaking(assignmentId) {
+        // Chuyển hướng xem bài Speaking đã nộp
+        window.location.href = `/student/speaking-submitted?assignmentId=${assignmentId}`;
+    }
+
+    window.onload = loadSpeakingAssignments;
+</script>
+
+</body>
+</html>

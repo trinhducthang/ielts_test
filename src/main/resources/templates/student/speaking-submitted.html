@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Bài Speaking & Nhận xét</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .content, .general-comments {
+            background: #f0f8ff;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            white-space: pre-wrap; /* giữ xuống dòng */
+            font-size: 16px;
+            color: #222;
+        }
+        .no-comment {
+            color: #888;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>Nội dung bài Speaking đã nộp</h3>
+    <div id="contentArea" class="content">Đang tải nội dung...</div>
+
+    <h3>Nhận xét chung</h3>
+    <div id="generalCommentsArea" class="general-comments">Đang tải nhận xét...</div>
+</div>
+
+<script>
+    const jwtToken = localStorage.getItem('jwtToken');
+    const assignmentId = new URLSearchParams(window.location.search).get('assignmentId');
+
+    async function loadSpeakingSubmission() {
+        const res = await fetch(`/api/speaking/assignments/${assignmentId}/submission`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            document.getElementById('contentArea').textContent = 'Không thể tải nội dung bài Speaking.';
+            document.getElementById('generalCommentsArea').textContent = '';
+            return;
+        }
+
+        const data = await res.json();
+        const content = data.content || '[Không có nội dung]';
+        const generalComments = data.feedback?.comment || '';
+
+        document.getElementById('contentArea').textContent = content;
+
+        if (generalComments.trim()) {
+            document.getElementById('generalCommentsArea').textContent = generalComments;
+        } else {
+            document.getElementById('generalCommentsArea').innerHTML = '<p class="no-comment">Không có nhận xét chung.</p>';
+        }
+    }
+
+    loadSpeakingSubmission();
+</script>
+
+</body>
+</html>

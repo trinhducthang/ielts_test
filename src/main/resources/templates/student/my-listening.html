@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bài nghe của tôi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .assignment-content {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .assignment-time, .assignment-due, .assignment-status, .assignment-score {
+            font-size: 14px;
+            color: #555;
+            margin-top: 8px;
+        }
+        .status-submitted {
+            color: #28a745;
+        }
+        .status-not-submitted {
+            color: #dc3545;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Bài nghe của tôi</h1>
+    <ul id="assignmentList"></ul>
+</div>
+
+<script>
+    const jwtToken = localStorage.getItem('jwtToken');
+
+    async function loadAssignments() {
+        const response = await fetch('/api/listening/assignments/mine', {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const list = document.getElementById('assignmentList');
+
+            for (const a of data) {
+                const li = document.createElement('li');
+
+                const createdAt = new Date(a.timeCreated).toLocaleString();
+                const dueDate = a.dueDate ? new Date(a.dueDate).toLocaleDateString() : "Không có";
+
+                let submissionData = null;
+                try {
+                    const submissionRes = await fetch(`/api/listening/assignments/${a.id}/submission`, {
+                        headers: { 'Authorization': `Bearer ${jwtToken}` }
+                    });
+
+                    if (submissionRes.ok) {
+                        submissionData = await submissionRes.json();
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi kiểm tra trạng thái nộp bài:", e);
+                }
+
+                const submittedAtText = submissionData?.submittedAt
+                    ? new Date(submissionData.submittedAt).toLocaleString()
+                    : "";
+                const scoreText = submissionData?.score !== undefined
+                    ? submissionData.score
+                    : "-";
+
+                li.innerHTML = `
+          <div class="assignment-content">${a.description}</div>
+          <div class="assignment-time">Thời gian giao bài: ${createdAt}</div>
+          <div class="assignment-due">Hạn nộp: ${dueDate}</div>
+          <div class="assignment-status ${submissionData ? 'status-submitted' : 'status-not-submitted'}">
+            Trạng thái: ${submissionData ? 'Đã nộp' : 'Chưa nộp'}
+          </div>
+
+          ${submissionData ? `
+            <div class="assignment-time">Thời gian nộp: ${submittedAtText}</div>
+            <div class="assignment-score">Số điểm: ${scoreText}</div>
+          ` : `
+            <button onclick="submitAssignment('${a.id}')">Nộp bài</button>
+          `}
+        `;
+
+                list.appendChild(li);
+            }
+        } else {
+            console.error('Lỗi khi tải bài nghe');
+        }
+    }
+
+    function submitAssignment(assignmentId) {
+        window.location.href = `/student/submit-listening?assignmentId=${assignmentId}`;
+    }
+
+    window.onload = loadAssignments;
+</script>
+</body>
+</html>

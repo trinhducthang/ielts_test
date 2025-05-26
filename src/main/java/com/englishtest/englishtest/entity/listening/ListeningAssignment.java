@@ -1,5 +1,4 @@
-package com.englishtest.englishtest.entity.reading;
-
+package com.englishtest.englishtest.entity.listening;
 
 import com.englishtest.englishtest.entity.QuestionAnswer;
 import lombok.Data;
@@ -11,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Document(collection = "reading_assignments")
-public class ReadingAssignment {
+@Document(collection = "listening_assignments")
+public class ListeningAssignment {
     @Id
     private String id;
 
@@ -20,8 +19,11 @@ public class ReadingAssignment {
     private LocalDate timeCreated;
     private LocalDate dueDate;
 
-    // Đường dẫn file PDF bài đọc (có thể là URL hoặc path trong storage)
+    // Đường dẫn file PDF bài nghe (có thể là URL hoặc path trong storage)
     private String readingPdfUrl;
+
+    // Đường dẫn file nghe MP3
+    private String audioMp3Url;
 
     // List UserId được giao bài
     private List<Long> assignedUserIds = new ArrayList<>();
@@ -30,7 +32,5 @@ public class ReadingAssignment {
     private List<QuestionAnswer> answerKey = new ArrayList<>();
 
     // List submission của học sinh (embedded document)
-    private List<ReadingSubmission> submissions = new ArrayList<>();
+    private List<ListeningSubmission> submissions = new ArrayList<>();
 }
-
-

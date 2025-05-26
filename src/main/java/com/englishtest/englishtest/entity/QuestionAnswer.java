@@ -1,4 +1,4 @@
-package com.englishtest.englishtest.entity.reading;
+package com.englishtest.englishtest.entity;
 
 import lombok.Data;
 

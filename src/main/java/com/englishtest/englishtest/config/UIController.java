@@ -17,10 +17,6 @@ public class UIController {
     }
 
 
-    @GetMapping("/student/answer/reading")
-    public String studentDashboard() {
-        return "/student/answer";
-    }
 
 
     @GetMapping("/teacher/user-management")
@@ -38,10 +34,22 @@ public class UIController {
         return "teacher/course";
     }
 
-    @GetMapping("/student/reading-test")
+    @GetMapping("/student/my-reading")
     public String readingTest2() {
-        return "student/reading-test";
+        return "student/my-reading";
     }
+
+    @GetMapping("/student/submit-reading")
+    public String submitReading() {
+        return "student/submit-reading";
+    }
+
+
+    @GetMapping("/teacher/reading-result")
+    public String readingResult() {
+        return "teacher/reading-result";
+    }
+
 
     @GetMapping("/student/home")
     public String home() {
@@ -78,9 +86,14 @@ public class UIController {
         return "teacher/get-answer";
     }
 
-    @GetMapping("/student/listening")
+    @GetMapping("/student/my-listening")
     public String listening() {
-        return "student/student_exercises";
+        return "student/my-listening";
+    }
+
+    @GetMapping("/student/submit-listening")
+    public String submitListening() {
+        return "student/submit-listening";
     }
 
     @GetMapping("/teacher/listening")
@@ -88,8 +101,35 @@ public class UIController {
         return "teacher/listening_assign";
     }
 
-    @GetMapping("/student/submit-reading")
-    public String submitReading() {
-        return "student/submit-reading";
+    @GetMapping("/teacher/listening-result")
+    public String listeningResult() {
+        return "teacher/listening-result";
     }
+
+    @GetMapping("/student/my-speaking")
+    public String mySpeaking() {
+        return "student/my-speaking";
+    }
+
+    @GetMapping("student/submit-speaking")
+    public String submitSpeaking() {
+        return "student/submit-speaking";
+    }
+
+    @GetMapping("/student/speaking-submitted")
+    public String speakingSubmitted() {
+        return "student/speaking-submitted";
+    }
+
+    @GetMapping("/teacher/create-speaking")
+    public String createSpeaking() {
+        return "teacher/speaking-assign";
+    }
+
+    @GetMapping("/teacher/give-feedback-speaking")
+    public String giveFeedbackSpeaking() {
+        return "teacher/give-feedback-speaking";
+    }
+
+
 }

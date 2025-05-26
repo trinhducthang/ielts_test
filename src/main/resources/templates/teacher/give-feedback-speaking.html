@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gửi nhận xét bài Speaking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 30px;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        select, textarea, button {
+            width: 100%;
+            margin-top: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .assignment-content {
+            background: #fefefe;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .assignment-content h3 {
+            margin-top: 0;
+        }
+
+        .submission-link {
+            color: #2980b9;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .submission-link:hover {
+            text-decoration: underline;
+        }
+
+        .inline-comment-box {
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #fff;
+            height: 100vh;
+            padding-top: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            background-color: #34495e;
+            border-top: 1px solid #2c3e50;
+        }
+
+        .menu-item:hover {
+            background-color: #1abc9c;
+        }
+
+        .submenu {
+            display: none;
+            background-color: #3c5a72;
+        }
+
+        .submenu a {
+            display: block;
+            padding: 10px 40px;
+            color: #ecf0f1;
+            text-decoration: none;
+        }
+
+        .submenu a:hover {
+            background-color: #16a085;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            padding-left: 250px; /* Đẩy nội dung chính sang phải để không bị che bởi sidebar */
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <h2>Menu</h2>
+
+    <div class="menu-item" onclick="toggleSubmenu('userSubmenu')">Quản lí user</div>
+    <div id="userSubmenu" class="submenu">
+        <a href="/teacher/course-management">Quản lí lớp học</a>
+        <a href="/teacher/user-management">Quản lí user</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('writingSubmenu')">Writing Skill</div>
+    <div id="writingSubmenu" class="submenu">
+        <a href="/teacher/create-writing">Giao bài viết</a>
+        <a href="/teacher/give-feedback">Nhận xét bài viết</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('speakingSubmenu')">Speaking Skill</div>
+    <div id="speakingSubmenu" class="submenu">
+        <a href="#">Giao bài Speaking</a>
+        <a href="#">Nhận xét bài Speaking</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('readingSubmenu')">Reading Skill</div>
+    <div id="readingSubmenu" class="submenu">
+        <a href="/teacher/reading-test">Giao bài Reading</a>
+    </div>
+</div>
+
+<h2>Gửi nhận xét bài Speaking của học sinh</h2>
+<form id="feedbackForm">
+    <label for="studentSelect">Chọn học sinh:</label>
+    <select id="studentSelect" required>
+        <option value="">-- Chọn học sinh --</option>
+    </select>
+
+    <label for="assignmentSelect">Chọn chủ đề:</label>
+    <select id="assignmentSelect" required disabled>
+        <option value="">-- Chọn chủ đề --</option>
+    </select>
+
+    <div class="assignment-content" id="assignmentContent">
+        <h3>Link bài Speaking đã nộp:</h3>
+        <p>Thời gian nộp: <span id="createAt"></span></p>
+        <p><a href="#" id="submissionLink" class="submission-link" target="_blank" rel="noopener noreferrer">Mở link bài nói</a></p>
+    </div>
+
+    <label for="feedbackText">Nhận xét tổng quát:</label>
+    <textarea id="feedbackText" rows="5" required></textarea>
+
+    <div id="inlineCommentsContainer"></div>
+
+    <button type="submit">Gửi nhận xét</button>
+</form>
+
+<script>
+    function toggleSubmenu(id) {
+        const submenu = document.getElementById(id);
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+
+    const jwtToken = localStorage.getItem('jwtToken');
+    const studentSelect = document.getElementById('studentSelect');
+    const assignmentSelect = document.getElementById('assignmentSelect');
+    const assignmentContentDiv = document.getElementById('assignmentContent');
+    const submissionLink = document.getElementById('submissionLink');
+    const createAt = document.getElementById('createAt');
+    const inlineCommentsContainer = document.getElementById('inlineCommentsContainer');
+
+    const userMap = new Map();
+    const assignmentMap = new Map();
+    const inlineComments = [];
+
+    async function loadStudents() {
+        const res = await fetch('/api/users/all', {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            alert('Lỗi khi tải danh sách học sinh');
+            return;
+        }
+
+        const data = await res.json();
+        data.result.forEach(user => {
+            userMap.set(user.username, user.id);
+            const option = document.createElement('option');
+            option.value = user.username;
+            option.textContent = user.username;
+            studentSelect.appendChild(option);
+        });
+    }
+
+    studentSelect.addEventListener('change', async function () {
+        const username = this.value;
+        const userId = userMap.get(username);
+
+        assignmentSelect.innerHTML = `<option value="">-- Chọn chủ đề --</option>`;
+        assignmentSelect.disabled = true;
+        assignmentContentDiv.style.display = 'none';
+        inlineComments.length = 0;
+        inlineCommentsContainer.innerHTML = '';
+
+        if (!username) return;
+
+        const res = await fetch(`/api/speaking/assignments/of?username=${username}`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            alert('Lỗi khi tải danh sách bài speaking');
+            return;
+        }
+
+        const assignments = await res.json();
+        assignmentMap.clear();
+
+        assignments.forEach(a => {
+            assignmentMap.set(a.id, a);
+            const option = document.createElement('option');
+            option.value = a.id;
+            option.textContent = a.description || `Bài Speaking #${a.id}`;
+            assignmentSelect.appendChild(option);
+        });
+
+        assignmentSelect.disabled = false;
+    });
+
+    assignmentSelect.addEventListener('change', async function () {
+        const assignmentId = this.value;
+        const username = studentSelect.value;
+        const userId = userMap.get(username);
+
+        assignmentContentDiv.style.display = 'none';
+        inlineComments.length = 0;
+        inlineCommentsContainer.innerHTML = '';
+
+        if (!assignmentId || !userId) return;
+
+        const res = await fetch(`/api/speaking/assignments/${assignmentId}/submission/${userId}`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            alert('Học sinh chưa nộp bài Speaking này.');
+            return;
+        }
+
+        const submission = await res.json();
+
+        // Giả sử submission có 2 trường: link (string) và submittedAt (datetime)
+        if (submission.content) {
+            // Làm sạch URL: loại bỏ dấu ngoặc kép nếu có
+            let cleanUrl = submission.content.trim();
+
+            if (cleanUrl.startsWith('"') && cleanUrl.endsWith('"')) {
+                cleanUrl = cleanUrl.slice(1, -1);  // Xoá dấu " ở đầu và cuối nếu có
+            }
+
+            // Gán vào link
+            submissionLink.href = cleanUrl;
+            submissionLink.textContent = cleanUrl;
+        } else {
+            submissionLink.href = '#';
+            submissionLink.textContent = '(Không có link bài nói)';
+        }
+
+        if (submission.submittedAt) {
+            const submittedAt = new Date(submission.submittedAt);
+            const day = submittedAt.getDate().toString().padStart(2, '0');
+            const month = (submittedAt.getMonth() + 1).toString().padStart(2, '0');
+            const year = submittedAt.getFullYear();
+            const hours = submittedAt.getHours().toString().padStart(2, '0');
+            const minutes = submittedAt.getMinutes().toString().padStart(2, '0');
+            createAt.textContent = `${day}/${month}/${year} ${hours}:${minutes}`;
+        } else {
+            createAt.textContent = '(Không có thời gian nộp)';
+        }
+
+        assignmentContentDiv.style.display = 'block';
+    });
+
+    // Không cần chọn text để comment inline trong speaking (thường không có)
+    // Nếu bạn muốn, có thể thêm logic tương tự phần viết ở đây
+
+    document.getElementById('feedbackForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const username = studentSelect.value;
+        const userId = userMap.get(username);
+        const assignmentId = assignmentSelect.value;
+        const feedbackText = document.getElementById('feedbackText').value;
+
+        if (!assignmentId || !userId) {
+            alert("Vui lòng chọn đầy đủ thông tin.");
+            return;
+        }
+
+        const feedback = {
+            comment: feedbackText
+        };
+
+        const res = await fetch(`/api/speaking/assignments/${assignmentId}/feedback/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken}`
+            },
+            body: JSON.stringify(feedback)
+        });
+
+        if (res.ok) {
+            alert('Gửi nhận xét thành công!');
+            document.getElementById('feedbackText').value = '';
+            inlineComments.length = 0;
+            inlineCommentsContainer.innerHTML = '';
+        } else {
+            alert('Có lỗi khi gửi nhận xét.');
+        }
+    });
+
+    loadStudents();
+</script>
+</body>
+</html>

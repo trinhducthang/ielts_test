@@ -1,10 +1,9 @@
 package com.englishtest.englishtest.controller;
 
 import com.englishtest.englishtest.dto.ExcelReader;
+import com.englishtest.englishtest.entity.QuestionAnswer;
 import com.englishtest.englishtest.entity.User;
 import com.englishtest.englishtest.entity.reading.*;
-import com.englishtest.englishtest.entity.writing.Submission;
-import com.englishtest.englishtest.entity.writing.WritingAssignment;
 import com.englishtest.englishtest.repository.ReadingAssignmentRepository;
 import com.englishtest.englishtest.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -217,6 +217,22 @@ public class ReadingAssignmentController {
         }
 
         return ResponseEntity.ok(submission.get());
+    }
+
+    @GetMapping("/reading/assignments/of")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public ResponseEntity<?> getAssignmentsOfStudent(@RequestParam String username) {
+        User user = userRepo.findByUsername(username);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        List<ReadingAssignment> assigned = assignmentRepo.findAll()
+                .stream()
+                .filter(a -> a.getAssignedUserIds().contains(user.getId())) // hoặc cách khác để biết ai được giao bài này
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(assigned);
     }
 
 

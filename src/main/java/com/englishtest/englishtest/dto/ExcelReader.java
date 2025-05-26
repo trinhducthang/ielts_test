@@ -1,6 +1,6 @@
 package com.englishtest.englishtest.dto;
 
-import com.englishtest.englishtest.entity.reading.QuestionAnswer;
+import com.englishtest.englishtest.entity.QuestionAnswer;
 import org.apache.poi.ss.usermodel.*;
 
 import java.io.InputStream;

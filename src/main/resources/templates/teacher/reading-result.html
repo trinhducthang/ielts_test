@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Xem bài Reading của học sinh</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding-left: 250px;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #fff;
+            height: 100vh;
+            padding-top: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            background-color: #34495e;
+            border-top: 1px solid #2c3e50;
+        }
+
+        .menu-item:hover {
+            background-color: #1abc9c;
+        }
+
+        .submenu {
+            display: none;
+            background-color: #3c5a72;
+        }
+
+        .submenu a {
+            display: block;
+            padding: 10px 40px;
+            color: #ecf0f1;
+            text-decoration: none;
+        }
+
+        .submenu a:hover {
+            background-color: #16a085;
+        }
+
+        main {
+            padding: 30px;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        select {
+            width: 100%;
+            margin-top: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .submission-info {
+            margin-top: 20px;
+            background: #fefefe;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .answer-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-left: 4px solid #3498db;
+            border-radius: 5px;
+        }
+
+        .answer-item strong {
+            color: #2c3e50;
+        }
+
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <h2>Menu</h2>
+
+    <div class="menu-item" onclick="toggleSubmenu('userSubmenu')">Quản lí user</div>
+    <div id="userSubmenu" class="submenu">
+        <a href="/teacher/course-management">Quản lí lớp học</a>
+        <a href="/teacher/user-management">Quản lí user</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('readingSubmenu')">Reading Skill</div>
+    <div id="readingSubmenu" class="submenu">
+        <a href="/teacher/reading-test">Giao bài Reading</a>
+        <a href="#">Xem bài nộp</a>
+    </div>
+</div>
+
+<main>
+    <h2>Xem bài Reading của học sinh</h2>
+
+    <form>
+        <label for="studentSelect">Chọn học sinh:</label>
+        <select id="studentSelect" required>
+            <option value="">-- Chọn học sinh --</option>
+        </select>
+
+        <label for="assignmentSelect">Chọn bài Reading:</label>
+        <select id="assignmentSelect" required disabled>
+            <option value="">-- Chọn bài Reading --</option>
+        </select>
+    </form>
+
+    <div class="submission-info" id="submissionInfo">
+        <h3>Thông tin bài nộp:</h3>
+        <p><strong>Thời gian nộp:</strong> <span id="submittedAt"></span></p>
+        <p><strong>Điểm:</strong> <span id="score"></span></p>
+
+        <h4>Câu trả lời:</h4>
+        <div id="answerList"></div>
+    </div>
+</main>
+
+<script>
+    function toggleSubmenu(id) {
+        const submenu = document.getElementById(id);
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
+
+    const jwtToken = localStorage.getItem('jwtToken');
+    const studentSelect = document.getElementById('studentSelect');
+    const assignmentSelect = document.getElementById('assignmentSelect');
+    const submissionInfo = document.getElementById('submissionInfo');
+    const submittedAt = document.getElementById('submittedAt');
+    const scoreSpan = document.getElementById('score');
+    const answerList = document.getElementById('answerList');
+
+    const userMap = new Map();
+    const assignmentMap = new Map();
+
+    async function loadStudents() {
+        const res = await fetch('/api/users/all', {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        const data = await res.json();
+        data.result.forEach(user => {
+            userMap.set(user.username, user.id);
+            const option = document.createElement('option');
+            option.value = user.username;
+            option.textContent = user.username;
+            studentSelect.appendChild(option);
+        });
+    }
+
+    studentSelect.addEventListener('change', async function () {
+        const username = this.value;
+        const userId = userMap.get(username);
+        assignmentSelect.innerHTML = `<option value="">-- Chọn bài Reading --</option>`;
+        assignmentSelect.disabled = true;
+        submissionInfo.style.display = 'none';
+
+        if (!username) return;
+
+        const res = await fetch(`/api/reading/assignments/of?username=${username}`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        const assignments = await res.json();
+        assignmentMap.clear();
+
+        assignments.forEach(a => {
+            assignmentMap.set(a.id, a);
+            const option = document.createElement('option');
+            option.value = a.id;
+            option.textContent = a.description || `Bài #${a.id}`;
+            assignmentSelect.appendChild(option);
+        });
+
+        assignmentSelect.disabled = false;
+    });
+
+    assignmentSelect.addEventListener('change', async function () {
+        const assignmentId = this.value;
+        const username = studentSelect.value;
+        const userId = userMap.get(username);
+
+        submissionInfo.style.display = 'none';
+        answerList.innerHTML = '';
+
+        if (!assignmentId || !userId) return;
+
+        const res = await fetch(`/api/reading/assignments/${assignmentId}/submission/${userId}`, {
+            headers: { 'Authorization': `Bearer ${jwtToken}` }
+        });
+
+        if (!res.ok) {
+            alert('Học sinh chưa nộp bài này.');
+            return;
+        }
+
+        const submission = await res.json();
+
+        submittedAt.textContent = new Date(submission.submittedAt).toLocaleString();
+        scoreSpan.textContent = submission.score ?? '(chưa chấm điểm)';
+
+        Object.entries(submission.answers).forEach(([qNum, ans]) => {
+            const div = document.createElement('div');
+            div.className = 'answer-item';
+            div.innerHTML = `<strong>Câu ${qNum}:</strong> ${ans}`;
+            answerList.appendChild(div);
+        });
+
+        submissionInfo.style.display = 'block';
+    });
+
+    loadStudents();
+</script>
+</body>
+</html>

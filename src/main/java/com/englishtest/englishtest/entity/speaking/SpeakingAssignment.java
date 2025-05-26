@@ -19,7 +19,6 @@ public class SpeakingAssignment {
     private String description;
     private LocalDate timeCreated;
     private LocalDate dueDate;
-    private String imageUrl;
 
     private List<Long> assignedUserIds;
 

@@ -1,4 +1,4 @@
-package com.englishtest.englishtest.repository.writing;
+package com.englishtest.englishtest.repository;
 
 import com.englishtest.englishtest.entity.writing.WritingAssignment;
 import org.springframework.data.mongodb.repository.MongoRepository;
