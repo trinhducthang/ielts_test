@@ -89,9 +89,95 @@
             margin-top: 15px;
             color: #777;
         }
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: #fff;
+            height: 100vh;
+            padding-top: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            background-color: #34495e;
+            border-top: 1px solid #2c3e50;
+        }
+
+        .menu-item:hover {
+            background-color: #1abc9c;
+        }
+
+        .submenu {
+            display: none;
+            background-color: #3c5a72;
+        }
+
+        .submenu a {
+            display: block;
+            padding: 10px 40px;
+            color: #ecf0f1;
+            text-decoration: none;
+        }
+
+        .submenu a:hover {
+            background-color: #16a085;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            padding-left: 250px; /* Đẩy nội dung chính sang phải để không bị che bởi sidebar */
+        }
     </style>
 </head>
 <body>
+<div class="sidebar">
+    <h2>Menu</h2>
+
+    <div class="menu-item" onclick="toggleSubmenu('userSubmenu')">Quản lí user</div>
+    <div id="userSubmenu" class="submenu">
+        <a href="/teacher/course-management">Quản lí lớp học</a>
+        <a href="/teacher/user-management">Quản lí user</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('writingSubmenu')">Writing Skill</div>
+    <div id="writingSubmenu" class="submenu">
+        <a href="/teacher/create-writing">Giao bài Writing</a>
+        <a href="/teacher/give-feedback">Nhận xét Writing</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('speakingSubmenu')">Speaking Skill</div>
+    <div id="speakingSubmenu" class="submenu">
+        <a href="/teacher/create-speaking">Giao bài Speaking</a>
+        <a href="/teacher/give-feedback-speaking">Nhận xét bài Speaking</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('listeningSubmenu')">Listening Skill</div>
+    <div id="listeningSubmenu" class="submenu">
+        <a href="/teacher/listening">Giao bài Listening</a>
+        <a href="/teacher/listening-result">Nhận xét bài Listening</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('readingSubmenu')">Reading Skill</div>
+    <div id="readingSubmenu" class="submenu">
+        <a href="/teacher/reading-test">Giao bài Reading</a>
+        <a href="/teacher/reading-results">Xem kết quả Reading</a>
+    </div>
+    <div class="logout-button" style="margin-top: auto; padding: 10px;">
+        <a href="/log-out" style="color: red; text-decoration: none; font-weight: bold;">Đăng xuất</a>
+    </div>
+</div>
 <div class="container">
     <h2>Giao bài Reading (upload file PDF & Excel)</h2>
     <form id="readingAssignmentForm" enctype="multipart/form-data">
@@ -119,6 +205,10 @@
 </div>
 
 <script>
+    function toggleSubmenu(id) {
+        const submenu = document.getElementById(id);
+        submenu.style.display = submenu.style.display === "block" ? "none" : "block";
+    }
     const jwtToken = localStorage.getItem('jwtToken');
 
     window.addEventListener('DOMContentLoaded', async () => {

@@ -45,7 +45,7 @@ public class UIController {
     }
 
 
-    @GetMapping("/teacher/reading-result")
+    @GetMapping("/teacher/reading-results")
     public String readingResult() {
         return "teacher/reading-result";
     }

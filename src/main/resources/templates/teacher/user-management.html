@@ -190,28 +190,37 @@
 <div class="sidebar">
     <h2>Menu</h2>
 
-    <div class="menu-item" onclick="toggleSubmenu('userSubmenu')">Manage users</div>
+    <div class="menu-item" onclick="toggleSubmenu('userSubmenu')">Quản lí user</div>
     <div id="userSubmenu" class="submenu">
-        <a href="/teacher/course-management">Manage course</a>
-        <a href="/teacher/user-management">Manage users</a>
+        <a href="/teacher/course-management">Quản lí lớp học</a>
+        <a href="/teacher/user-management">Quản lí user</a>
     </div>
 
     <div class="menu-item" onclick="toggleSubmenu('writingSubmenu')">Writing Skill</div>
     <div id="writingSubmenu" class="submenu">
-        <a href="/teacher/create-writing">Giao bài viết</a>
-        <a href="/teacher/give-feedback">Nhận xét bài viết</a>
+        <a href="/teacher/create-writing">Giao bài Writing</a>
+        <a href="/teacher/give-feedback">Nhận xét Writing</a>
     </div>
 
     <div class="menu-item" onclick="toggleSubmenu('speakingSubmenu')">Speaking Skill</div>
     <div id="speakingSubmenu" class="submenu">
-        <a href="#">Giao bài Speaking</a>
-        <a href="#">Nhận xét bài Speaking</a>
+        <a href="/teacher/create-speaking">Giao bài Speaking</a>
+        <a href="/teacher/give-feedback-speaking">Nhận xét bài Speaking</a>
+    </div>
+
+    <div class="menu-item" onclick="toggleSubmenu('listeningSubmenu')">Listening Skill</div>
+    <div id="listeningSubmenu" class="submenu">
+        <a href="/teacher/listening">Giao bài Listening</a>
+        <a href="/teacher/listening-result">Nhận xét bài Listening</a>
     </div>
 
     <div class="menu-item" onclick="toggleSubmenu('readingSubmenu')">Reading Skill</div>
     <div id="readingSubmenu" class="submenu">
         <a href="/teacher/reading-test">Giao bài Reading</a>
-
+        <a href="/teacher/reading-results">Xem kết quả Reading</a>
+    </div>
+    <div class="logout-button" style="margin-top: auto; padding: 10px;">
+        <a href="/log-out" style="color: red; text-decoration: none; font-weight: bold;">Đăng xuất</a>
     </div>
 </div>
 
