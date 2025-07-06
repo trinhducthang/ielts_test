@@ -1,15 +1,18 @@
 package com.englishtest.englishtest.controller;
 
 import com.englishtest.englishtest.dto.ExcelReader;
+import com.englishtest.englishtest.entity.Notification;
 import com.englishtest.englishtest.entity.QuestionAnswer;
 import com.englishtest.englishtest.entity.User;
 import com.englishtest.englishtest.entity.reading.*;
+import com.englishtest.englishtest.repository.NotificationRepository;
 import com.englishtest.englishtest.repository.ReadingAssignmentRepository;
 import com.englishtest.englishtest.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +38,12 @@ public class ReadingAssignmentController {
 
     @Autowired
     private UserRepository userRepo;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private NotificationRepository notificationRepo;
 
 
     @GetMapping("/reading/assignments/{id}")
@@ -82,7 +91,10 @@ public class ReadingAssignmentController {
         try {
             // Parse JSON string thành List<String>
             ObjectMapper objectMapper = new ObjectMapper();
-            List<Long> assignedUserIds = objectMapper.readValue(assignedUserIdsJson, List.class);
+            List<?> rawList = objectMapper.readValue(assignedUserIdsJson, List.class);
+            List<Long> assignedUserIds = rawList.stream()
+                    .map(item -> Long.valueOf(item.toString()))
+                    .collect(Collectors.toList());
 
             // Lưu file PDF và lấy URL
             String pdfUrl = saveFileAndGetUrl(pdfFile);
@@ -101,6 +113,27 @@ public class ReadingAssignmentController {
             assignment.setAssignedUserIds(assignedUserIds);
 
             assignmentRepo.save(assignment);
+
+
+            String notiMsg = "Bạn vừa được giao một bài nghe mới: " + description;
+
+            for (Long userId : assignedUserIds) {
+                // 1. Lưu DB
+                Notification notification = Notification.builder()
+                        .userId(userId)
+                        .message(notiMsg)
+                        .read(false)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                notificationRepo.save(notification);
+
+                // 2. Gửi WebSocket
+                messagingTemplate.convertAndSendToUser(
+                        String.valueOf(userId),
+                        "/queue/notifications",
+                        notiMsg
+                );
+            }
 
             return ResponseEntity.ok("Reading assignment created successfully");
 

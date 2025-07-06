@@ -131,5 +131,10 @@ public class UIController {
         return "teacher/give-feedback-speaking";
     }
 
+    @GetMapping("/message")
+    public String message() {
+        return "/student/message";
+    }
+
 
 }

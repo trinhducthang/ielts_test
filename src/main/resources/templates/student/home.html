@@ -71,7 +71,9 @@
 
         /* Nội dung chính */
         .main-content {
-            margin-left: 260px; /* Để tránh bị che bởi thanh menu */
+            width: 100%;
+            height: 100%;
+            margin-left: 280px; /* Để tránh bị che bởi thanh menu */
             padding: 30px;
             width: 100%;
             background-color: #f9f9f9;
@@ -98,6 +100,60 @@
         .sidebar:hover {
             width: 280px;
         }
+        #notificationBell {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            cursor: pointer;
+            font-size: 24px;
+            z-index: 1000;
+        }
+
+        .badge {
+            background: red;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 50%;
+            font-size: 14px;
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            display: none;
+        }
+
+        #notificationBox {
+            position: fixed;
+            top: 60px;
+            right: 30px;
+            width: 300px;
+            max-height: 400px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            padding: 10px;
+            display: none;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        #notificationBox h4 {
+            margin: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .noti-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .noti-item:last-child {
+            border-bottom: none;
+        }
+
     </style>
 </head>
 <body>
@@ -200,6 +256,63 @@
     function changeContent(type) {
         document.getElementById('contentDisplay').innerHTML = content[type];
     }
+</script>
+<!-- 🔔 Icon chuông + Badge -->
+<div id="notificationBell">
+    <span class="bell">🔔</span>
+    <span class="badge" id="notiCount">0</span>
+</div>
+
+<!-- 📩 Dropdown nội dung thông báo -->
+<div id="notificationBox">
+    <h4>Thông báo mới</h4>
+    <div id="notiList"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script>
+    const userId = localStorage.getItem('userId'); // 👈 userId phải có
+
+    if (userId) {
+        const socket = new SockJS(`http://localhost:8080/ws?userId=${userId}`);
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log("✅ Kết nối WebSocket thành công:", frame);
+
+            stompClient.subscribe("/user/queue/notifications", function (message) {
+                const notiList = document.getElementById("notiList");
+                const notiCount = document.getElementById("notiCount");
+
+                // 👉 Thêm notification vào danh sách
+                const div = document.createElement("div");
+                div.className = "noti-item";
+                div.textContent = message.body;
+                notiList.prepend(div);
+
+                // 👉 Tăng badge
+                notiCount.textContent = parseInt(notiCount.textContent) + 1;
+                notiCount.style.display = "inline-block";
+            });
+
+        }, function (error) {
+            console.error("❌ WebSocket lỗi:", error);
+        });
+    }
+
+    // 👇 Mở/đóng thông báo khi bấm chuông
+    document.getElementById("notificationBell").addEventListener("click", function () {
+        const box = document.getElementById("notificationBox");
+        const notiCount = document.getElementById("notiCount");
+
+        // Toggle hiển thị
+        box.style.display = box.style.display === "block" ? "none" : "block";
+
+        // Reset số badge
+        notiCount.textContent = "0";
+        notiCount.style.display = "none";
+    });
 </script>
 
 </body>

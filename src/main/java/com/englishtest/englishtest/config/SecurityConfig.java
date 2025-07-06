@@ -39,6 +39,7 @@ public class SecurityConfig {
 
     private final String[] PUBLIC_GET_ROLE_ADMIN ={
             "/**"
+
     };
 
 
@@ -54,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_UI_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ROLE_ADMIN ).hasRole("ADMIN")
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE,"/loanOffer/**").permitAll()
                         .requestMatchers(HttpMethod.PUT,"/loanOffer/**","api/users/updatePassword/**","/bank/getBank/**","/**").permitAll()
                         .anyRequest().authenticated()
